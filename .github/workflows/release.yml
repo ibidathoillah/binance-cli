@@ -100,8 +100,7 @@ jobs:
       - name: Publish
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
-        run: |
-          npm publish --access public || echo "Already published"
+        run: npm publish --access public || echo "Already published"
 
   publish-docker:
     name: Publish to Docker Hub

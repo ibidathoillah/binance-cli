@@ -157,31 +157,31 @@ impl FuturesCommand {
                 Ok(CommandOutput::new(result, "Futures Exchange Info"))
             }
             Self::Ticker { pair } => {
-                let sym = crate::normalize_pair(pair);
+                let sym = normalize_pair(pair);
                 let url = format!("{}/fapi/v1/ticker/24hr?symbol={}", futures_host, sym);
                 let result = self.raw_get(&url).await?;
                 Ok(CommandOutput::new(result, format!("Futures 24h Ticker — {}", sym)))
             }
             Self::Price { pair } => {
-                let sym = crate::normalize_pair(pair);
+                let sym = normalize_pair(pair);
                 let url = format!("{}/fapi/v1/ticker/price?symbol={}", futures_host, sym);
                 let result = self.raw_get(&url).await?;
                 Ok(CommandOutput::new(result, format!("Futures Price — {}", sym)))
             }
             Self::Orderbook { pair, count } => {
-                let sym = crate::normalize_pair(pair);
+                let sym = normalize_pair(pair);
                 let url = format!("{}/fapi/v1/depth?symbol={}&limit={}", futures_host, sym, count);
                 let result = self.raw_get(&url).await?;
                 Ok(CommandOutput::new(result, format!("Futures Order Book — {}", sym)))
             }
-            Self::Trades { pair, limit } => {
-                let sym = crate::normalize_pair(pair);
-                let url = format!("{}/fapi/v1/trades?symbol={}&limit={}", futures_host, sym, limit);
+            Self::Trades { pair, count } => {
+                let sym = normalize_pair(pair);
+                let url = format!("{}/fapi/v1/trades?symbol={}&limit={}", futures_host, sym, count);
                 let result = self.raw_get(&url).await?;
                 Ok(CommandOutput::new(result, format!("Futures Recent Trades — {}", sym)))
             }
             Self::Ohlc { pair, interval, count } => {
-                let sym = crate::normalize_pair(pair);
+                let sym = normalize_pair(pair);
                 let url = format!("{}/fapi/v1/klines?symbol={}&interval={}&limit={}", futures_host, sym, interval, count);
                 let result = self.raw_get(&url).await?;
                 Ok(CommandOutput::new(result, format!("Futures Klines — {}", sym)))
@@ -206,7 +206,7 @@ impl FuturesCommand {
             }
             Self::Order { pair, side, r#type, volume, price, time_in_force, stop_price, reduce_only } => {
                 let mut params = Vec::new();
-                let sym = crate::normalize_pair(pair);
+                let sym = normalize_pair(pair);
                 params.push(("symbol", sym.as_str()));
                 params.push(("side", side.as_str()));
                 params.push(("type", r#type.as_str()));
@@ -225,7 +225,7 @@ impl FuturesCommand {
                 
                 let ro_str = reduce_only.to_string();
                 if *reduce_only {
-                    params.push(("reduceOnly", ro_str.as_str()));
+                    params.push(("reduceOnly", &ro_str));
                 }
                 
                 let result = self.private_post(ctx, "/fapi/v1/order", &params).await?;
@@ -233,12 +233,12 @@ impl FuturesCommand {
             }
             Self::Cancel { pair, order_id, client_order_id } => {
                 let mut params = Vec::new();
-                let sym = crate::normalize_pair(pair);
+                let sym = normalize_pair(pair);
                 params.push(("symbol", sym.as_str()));
                 let oid_str;
                 if let Some(oid) = order_id {
                     oid_str = oid.to_string();
-                    params.push(("orderId", oid_str.as_str()));
+                    params.push(("orderId", &oid_str));
                 }
                 if let Some(coid) = client_order_id {
                     params.push(("origClientOrderId", coid.as_str()));
@@ -248,7 +248,7 @@ impl FuturesCommand {
             }
             Self::CancelAll { pair } => {
                 let mut params = Vec::new();
-                let sym = crate::normalize_pair(pair);
+                let sym = normalize_pair(pair);
                 params.push(("symbol", sym.as_str()));
                 let result = self.private_delete(ctx, "/fapi/v1/allOpenOrders", &params).await?;
                 Ok(CommandOutput::new(result, "Futures Cancel All Result"))
@@ -257,9 +257,9 @@ impl FuturesCommand {
     }
 
     async fn raw_get(&self, url: &str) -> Result<Value, BinanceError> {
-        let resp = reqwest::get(url).await.map_err(|e| BinanceError::Http(e.to_string()))?;
-        let body = resp.text().await.map_err(|e| BinanceError::Http(e.to_string()))?;
-        let val: Value = serde_json::from_str(&body).map_err(|e| BinanceError::Json(e.to_string()))?;
+        let resp = reqwest::get(url).await.map_err(|e| BinanceError::Network(e.to_string()))?;
+        let body = resp.text().await.map_err(|e| BinanceError::Network(e.to_string()))?;
+        let val: Value = serde_json::from_str(&body).map_err(|e| BinanceError::Parse(e.to_string()))?;
         Ok(val)
     }
 
@@ -289,7 +289,7 @@ impl FuturesCommand {
         
         type HmacSha256 = Hmac<Sha256>;
         let mut mac = HmacSha256::new_from_slice(creds.api_secret.as_bytes())
-            .map_err(|e| BinanceError::Other(e.to_string()))?;
+            .map_err(|e| BinanceError::Internal(e.to_string()))?;
         mac.update(sign_payload.as_bytes());
         let signature = hex::encode(mac.finalize().into_bytes());
         
@@ -300,21 +300,22 @@ impl FuturesCommand {
             "GET" => req_client.get(&full_url),
             "POST" => req_client.post(&full_url),
             "DELETE" => req_client.delete(&full_url),
-            _ => return Err(BinanceError::Other(format!("Unsupported method: {}", method))),
+            _ => return Err(BinanceError::Internal(format!("Unsupported method: {}", method))),
         };
         
         let resp = builder
             .header("X-MBX-APIKEY", &creds.api_key)
             .send()
             .await
-            .map_err(|e| BinanceError::Http(e.to_string()))?;
+            .map_err(|e| BinanceError::Network(e.to_string()))?;
             
-        let body = resp.text().await.map_err(|e| BinanceError::Http(e.to_string()))?;
-        let val: Value = serde_json::from_str(&body).map_err(|e| BinanceError::Json(e.to_string()))?;
+        let body = resp.text().await.map_err(|e| BinanceError::Network(e.to_string()))?;
+        let val: Value = serde_json::from_str(&body).map_err(|e| BinanceError::Parse(e.to_string()))?;
         
         if val.get("code").is_some() && val.get("msg").is_some() {
+            let code = val["code"].as_i64().unwrap_or(-1);
             let msg = val["msg"].as_str().unwrap_or("Unknown API error");
-            return Err(BinanceError::Api(msg.to_string()));
+            return Err(BinanceError::Api { code, message: msg.to_string() });
         }
         
         Ok(val)
