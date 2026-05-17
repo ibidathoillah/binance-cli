@@ -18,6 +18,7 @@ set -euo pipefail
 BINARY="${BINANCE_BIN:-./target/debug/binance}"
 PAIR="${BINANCE_TEST_PAIR:-BTCUSDT}"
 PAIR_LOWER=$(echo "$PAIR" | tr '[:upper:]' '[:lower:]')
+PAIR_FLEX="${BINANCE_TEST_PAIR_FLEX:-btc/usdt}"
 TEST_COIN="${BINANCE_TEST_COIN:-USDT}"
 
 PASS=0
@@ -148,14 +149,14 @@ run_test "ticker $PAIR (table)" \
 run_test_json "ticker $PAIR (json)" \
     $BINARY -o json ticker "$PAIR"
 
-run_test_json "price $PAIR" \
-    $BINARY -o json price "$PAIR"
+run_test_json "price $PAIR_FLEX" \
+    $BINARY -o json price "$PAIR_FLEX"
 
 run_test_json "book-ticker $PAIR" \
     $BINARY -o json book-ticker "$PAIR"
 
-run_test_json "orderbook $PAIR" \
-    $BINARY -o json orderbook "$PAIR" --count 5
+run_test_json "orderbook $PAIR_FLEX" \
+    $BINARY -o json orderbook "$PAIR_FLEX" --count 5
 
 run_test_json "trades $PAIR" \
     $BINARY -o json trades "$PAIR" --count 5
@@ -228,7 +229,7 @@ if $HAS_CREDS; then
         $BINARY -o json trades-history "$PAIR" --count 5
 
     run_test_json "order open-orders" \
-        $BINARY -o json order open-orders --pair "$PAIR"
+        $BINARY -o json order open-orders --pair "$PAIR_FLEX"
 
     run_test_json "order all-orders $PAIR" \
         $BINARY -o json order all-orders "$PAIR" --count 5
@@ -254,11 +255,11 @@ fi
 if $RUN_WS; then
 log_header "WEBSOCKET - Market & User Streams"
 
-run_test "ws ticker $PAIR_LOWER" \
-    $BINARY -o json ws ticker "$PAIR_LOWER" --limit 1 --seconds 15
+run_test "ws ticker $PAIR_FLEX" \
+    $BINARY -o json ws ticker "$PAIR_FLEX" --limit 1 --seconds 15
 
-run_test "ws depth $PAIR_LOWER" \
-    $BINARY -o json ws depth "$PAIR_LOWER" --limit 1 --seconds 15
+run_test "ws depth $PAIR_FLEX" \
+    $BINARY -o json ws depth "$PAIR_FLEX" --limit 1 --seconds 15
 
 AUTH_TEST_OUTPUT=""
 AUTH_TEST_EXIT=0

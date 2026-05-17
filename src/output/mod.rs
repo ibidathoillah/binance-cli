@@ -57,7 +57,7 @@ impl CommandOutput {
         self.headers = headers;
         self.rows = rows;
         self
-      }
+    }
 
     /// Set the output format.
     pub fn with_format(mut self, format: OutputFormat) -> Self {

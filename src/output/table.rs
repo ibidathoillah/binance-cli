@@ -270,11 +270,10 @@ mod tests {
 
     #[test]
     fn test_table_render_explicit() {
-        let output = CommandOutput::new(Value::Null, "Explicit")
-            .with_table(
-                vec!["Col1".to_string(), "Col2".to_string()],
-                vec![vec!["A".to_string(), "B".to_string()]],
-            );
+        let output = CommandOutput::new(Value::Null, "Explicit").with_table(
+            vec!["Col1".to_string(), "Col2".to_string()],
+            vec![vec!["A".to_string(), "B".to_string()]],
+        );
         let rendered = render(&output);
         assert!(rendered.contains("Explicit"));
         assert!(rendered.contains("Col1"));

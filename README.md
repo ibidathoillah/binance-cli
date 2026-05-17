@@ -16,7 +16,7 @@ Unofficial Rust CLI for Binance Spot. Use it to inspect markets, manage account 
 - Funding: deposit address, deposit history, withdrawal history, and crypto withdrawals.
 - Real-time streams: depth, ticker, book ticker, user data, order events, and balance events.
 - Interactive shell: stateful REPL with persistent history at `~/.config/binance/history`.
-- Paper trading: local simulated balances for safe command validation.
+- Paper trading: local simulated balances and orders stored in `~/.config/binance/paper_state.json`.
 - Automation-friendly output: human tables by default, JSON envelopes with `-o json`.
 - Credential resolution: CLI flags, environment variables, or `~/.config/binance/config.toml`.
 - Agent support: MCP server mode for tool discovery and JSON-RPC execution.
@@ -64,10 +64,10 @@ Market data does not require credentials:
 ```bash
 binance ping
 binance server-time
-binance price BTCUSDT
-binance ticker BTCUSDT
-binance orderbook BTCUSDT --count 10
-binance -o json book-ticker BTCUSDT
+binance price btc/usdt
+binance ticker btc/usdt
+binance orderbook btc/usdt --count 10
+binance -o json book-ticker btc/usdt
 ```
 
 Configure private API credentials:
@@ -112,15 +112,15 @@ Options:
 binance ping
 binance server-time
 binance exchange-info
-binance ticker BTCUSDT
+binance ticker btc/usdt
 binance ticker-all
-binance price BTCUSDT
-binance book-ticker BTCUSDT
-binance orderbook BTCUSDT --count 10
-binance trades BTCUSDT --count 5
-binance agg-trades BTCUSDT --count 5
-binance historical-trades BTCUSDT --count 5
-binance ohlc BTCUSDT --interval 1m --count 5
+binance price btc/usdt
+binance book-ticker btc/usdt
+binance orderbook btc/usdt --count 10
+binance trades btc/usdt --count 5
+binance agg-trades btc/usdt --count 5
+binance historical-trades btc/usdt --count 5
+binance ohlc btc/usdt --interval 1m --count 5
 ```
 
 ### Account
@@ -128,47 +128,59 @@ binance ohlc BTCUSDT --interval 1m --count 5
 ```bash
 binance account-info
 binance balance
-binance trades-history BTCUSDT --count 5
+binance trades-history btc/usdt --count 5
 ```
 
 ### Trading
 
 ```bash
-binance order buy BTCUSDT -t LIMIT --price 76500 --volume 0.005
-binance order sell BTCUSDT -t MARKET --volume 0.002
-binance order cancel BTCUSDT --order-id 1872651
-binance order cancel-all BTCUSDT
-binance order query BTCUSDT --order-id 1872651
-binance order open-orders --pair BTCUSDT
-binance order all-orders BTCUSDT --count 5
+binance order buy btc/usdt -t LIMIT --price 76500 --volume 0.005
+binance order sell btc/usdt -t MARKET --volume 0.002
+binance order cancel btc/usdt --order-id 1872651
+binance order cancel-all btc/usdt
+binance order query btc/usdt --order-id 1872651
+binance order open-orders --pair btc/usdt
+binance order all-orders btc/usdt --count 5
 ```
 
 ### Funding
 
 ```bash
-binance deposit addresses USDT --network ETH
-binance deposit status --asset USDT
-binance withdrawal status --asset USDT
-binance withdraw --asset USDT --volume 100 --address destination_wallet_address --network ETH
+binance deposit addresses usdt --network eth
+binance deposit status --asset usdt
+binance withdrawal status --asset usdt
+binance withdraw --asset usdt --volume 100 --address destination_wallet_address --network eth
 ```
 
 ### Paper Trading
 
 ```bash
+binance paper init --pair btc/usdt --quote-balance 10000 --base-balance 1
 binance paper balance
+binance paper buy btc/usdt --price 70000 --volume 0.01
+binance paper sell btc/usdt --price 72000 --volume 0.01
+binance paper fill 1
+binance paper orders
+binance paper orders --all
+binance paper cancel 2
+binance paper cancel-all --pair btc/usdt
+binance paper topup usdt 1000
+binance paper history
+binance paper status
+binance paper reset
 ```
 
-Paper trading currently provides a local simulated portfolio (`USDT`, `BTC`, `BNB`) for safe CLI validation.
+Use `--fill` on `paper buy` or `paper sell` to immediately settle an order at the supplied price.
 
 ### WebSocket Streaming
 
 Market streams:
 
 ```bash
-binance ws depth btcusdt
-binance ws ticker btcusdt
-binance ws book-ticker btcusdt
-binance ws ticker btcusdt --limit 1 --seconds 15
+binance ws depth btc/usdt
+binance ws ticker btc/usdt
+binance ws book-ticker btc/usdt
+binance ws ticker btc/usdt --limit 1 --seconds 15
 ```
 
 Private streams:
@@ -190,8 +202,8 @@ binance shell
 Example shell session:
 
 ```text
-binance> price BTCUSDT
-Price - BTCUSDT
+binance> price btc/usdt
+Price - btc/usdt
 ```
 
 ### MCP Server
@@ -232,8 +244,8 @@ The repository includes live API smoke tests:
 Environment knobs:
 
 ```bash
-BINANCE_TEST_PAIR=BTCUSDT
-BINANCE_TEST_COIN=USDT
+BINANCE_TEST_PAIR=btc/usdt
+BINANCE_TEST_COIN=usdt
 BINANCE_BIN=./target/debug/binance
 ```
 

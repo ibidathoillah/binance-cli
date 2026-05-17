@@ -1,11 +1,14 @@
-use std::str::FromStr;
+use binance_spot_connector_rust::trade::{
+    self,
+    order::{Side, TimeInForce},
+};
 use clap::Subcommand;
-use binance_spot_connector_rust::trade::{self, order::{Side, TimeInForce}};
 use rust_decimal::Decimal;
+use std::str::FromStr;
 
 use crate::errors::BinanceError;
 use crate::output::CommandOutput;
-use crate::AppContext;
+use crate::{normalize_pair, AppContext};
 
 #[derive(Debug, Subcommand)]
 pub enum OrderCommand {
@@ -149,7 +152,7 @@ impl OrderCommand {
             }
 
             Self::Cancel { pair, order_id } => {
-                let sym = pair.to_uppercase();
+                let sym = normalize_pair(pair);
                 let request = trade::cancel_order(&sym)
                     .order_id(*order_id)
                     .credentials(&binance_creds);
@@ -159,16 +162,18 @@ impl OrderCommand {
             }
 
             Self::CancelAll { pair } => {
-                let sym = pair.to_uppercase();
-                let request = trade::cancel_open_orders(&sym)
-                    .credentials(&binance_creds);
+                let sym = normalize_pair(pair);
+                let request = trade::cancel_open_orders(&sym).credentials(&binance_creds);
                 let result = client.send_request(request).await?;
                 CommandOutput::new(result, format!("Cancel All Open Orders — {}", sym))
-                    .with_addendum(format!("All open orders for {} cancelled successfully", sym))
+                    .with_addendum(format!(
+                        "All open orders for {} cancelled successfully",
+                        sym
+                    ))
             }
 
             Self::Query { pair, order_id } => {
-                let sym = pair.to_uppercase();
+                let sym = normalize_pair(pair);
                 let request = trade::get_order(&sym)
                     .order_id(*order_id)
                     .credentials(&binance_creds);
@@ -179,7 +184,7 @@ impl OrderCommand {
             Self::OpenOrders { pair } => {
                 let mut request = trade::open_orders().credentials(&binance_creds);
                 let title = if let Some(sym) = pair {
-                    let sym_upper = sym.to_uppercase();
+                    let sym_upper = normalize_pair(sym);
                     request = request.symbol(&sym_upper);
                     format!("Open Orders — {}", sym_upper)
                 } else {
@@ -190,8 +195,12 @@ impl OrderCommand {
                 CommandOutput::new(result, title)
             }
 
-            Self::AllOrders { pair, order_id, count } => {
-                let sym = pair.to_uppercase();
+            Self::AllOrders {
+                pair,
+                order_id,
+                count,
+            } => {
+                let sym = normalize_pair(pair);
                 let mut request = trade::all_orders(&sym)
                     .limit(*count)
                     .credentials(&binance_creds);
@@ -219,7 +228,7 @@ impl OrderCommand {
         client_order_id: Option<&str>,
         binance_creds: &binance_spot_connector_rust::http::Credentials,
     ) -> Result<CommandOutput, BinanceError> {
-        let sym = pair.to_uppercase();
+        let sym = normalize_pair(pair);
         let otype = order_type.to_uppercase();
 
         let qty_dec = Decimal::from_str(volume).map_err(|e| {

@@ -1,5 +1,5 @@
-use clap::Subcommand;
 use binance_spot_connector_rust::trade;
+use clap::Subcommand;
 
 use crate::errors::BinanceError;
 use crate::output::CommandOutput;
@@ -47,13 +47,20 @@ impl AccountCommand {
                     .credentials(&binance_creds);
                 let result = client.send_request(request).await?;
                 if let Some(balances) = result.get("balances") {
-                    CommandOutput::new(serde_json::json!({ "balances": balances }), "Account Balances")
+                    CommandOutput::new(
+                        serde_json::json!({ "balances": balances }),
+                        "Account Balances",
+                    )
                 } else {
                     CommandOutput::new(result, "Account Info")
                 }
             }
 
-            Self::Trades { symbol, limit, from_id } => {
+            Self::Trades {
+                symbol,
+                limit,
+                from_id,
+            } => {
                 let sym = symbol.to_uppercase();
                 let mut request = trade::my_trades(&sym)
                     .limit(*limit)

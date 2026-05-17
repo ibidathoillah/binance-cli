@@ -1,6 +1,6 @@
-use clap::Subcommand;
 use binance_spot_connector_rust::market;
 use binance_spot_connector_rust::trade;
+use clap::Subcommand;
 
 use crate::config::{AuthConfig, Config};
 use crate::errors::BinanceError;
@@ -70,11 +70,9 @@ impl AuthCommand {
             Self::Test => {
                 // Test public ping
                 let _ = client.send_request(market::ping()).await?;
-                let mut output = CommandOutput::new(
-                    serde_json::json!({ "connectivity": "ok" }),
-                    "Auth Test",
-                )
-                .with_addendum("API connectivity OK");
+                let mut output =
+                    CommandOutput::new(serde_json::json!({ "connectivity": "ok" }), "Auth Test")
+                        .with_addendum("API connectivity OK");
 
                 // Test private endpoints
                 match client.require_credentials() {
@@ -82,7 +80,8 @@ impl AuthCommand {
                         let req = trade::account().credentials(&creds.to_binance_credentials());
                         match client.send_request(req).await {
                             Ok(_) => {
-                                output = output.with_addendum("Authentication OK — credentials are valid");
+                                output = output
+                                    .with_addendum("Authentication OK — credentials are valid");
                             }
                             Err(e) => {
                                 return Err(e);

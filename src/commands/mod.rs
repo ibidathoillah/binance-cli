@@ -1,17 +1,17 @@
-pub mod market;
-pub mod trade;
 pub mod account;
-pub mod funding;
-pub mod websocket;
-pub mod paper;
 pub mod auth;
+pub mod funding;
+pub mod market;
+pub mod paper;
+pub mod trade;
 pub mod utility;
+pub mod websocket;
 
-pub use market::MarketCommand;
-pub use trade::OrderCommand;
 pub use account::AccountCommand;
-pub use funding::{DepositCommand, WithdrawalCommand, execute_withdraw};
-pub use websocket::WebSocketCommand;
-pub use paper::PaperCommand;
 pub use auth::AuthCommand;
+pub use funding::{execute_withdraw, DepositCommand, WithdrawalCommand};
+pub use market::MarketCommand;
+pub use paper::PaperCommand;
+pub use trade::OrderCommand;
 pub use utility::run_shell;
+pub use websocket::WebSocketCommand;

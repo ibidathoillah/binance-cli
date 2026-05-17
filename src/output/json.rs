@@ -39,8 +39,7 @@ mod tests {
 
     #[test]
     fn test_json_render_addendum() {
-        let output = CommandOutput::new(json!({"val": 42}), "Label")
-            .with_addendum("all good");
+        let output = CommandOutput::new(json!({"val": 42}), "Label").with_addendum("all good");
         let rendered = render(&output);
         assert!(rendered.contains("\"addendum\": \"all good\""));
     }

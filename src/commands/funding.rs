@@ -1,7 +1,7 @@
-use std::str::FromStr;
-use clap::Subcommand;
 use binance_spot_connector_rust::wallet;
+use clap::Subcommand;
 use rust_decimal::Decimal;
+use std::str::FromStr;
 
 use crate::errors::BinanceError;
 use crate::output::CommandOutput;
@@ -106,9 +106,8 @@ pub async fn execute_withdraw(
     let binance_creds = creds.to_binance_credentials();
 
     let c = asset.to_uppercase();
-    let amt_dec = Decimal::from_str(volume).map_err(|e| {
-        BinanceError::Validation(format!("Invalid volume '{}': {}", volume, e))
-    })?;
+    let amt_dec = Decimal::from_str(volume)
+        .map_err(|e| BinanceError::Validation(format!("Invalid volume '{}': {}", volume, e)))?;
 
     let mut request = wallet::withdraw(&c, address, amt_dec).credentials(&binance_creds);
     if let Some(net) = network {
@@ -117,7 +116,10 @@ pub async fn execute_withdraw(
 
     let result = client.send_request(request).await?;
     let output = CommandOutput::new(result, "Withdrawal Submitted")
-        .with_addendum(format!("Withdrawal request of {} {} submitted successfully", volume, c))
+        .with_addendum(format!(
+            "Withdrawal request of {} {} submitted successfully",
+            volume, c
+        ))
         .with_format(ctx.format);
 
     Ok(output)

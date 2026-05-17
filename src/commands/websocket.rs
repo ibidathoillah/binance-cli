@@ -1,13 +1,13 @@
+use binance_spot_connector_rust::http::{request::RequestBuilder, Method};
 use clap::Subcommand;
 use futures_util::{SinkExt, Stream, StreamExt};
 use serde_json::Value;
 use tokio::time::{timeout, Duration, Instant};
 use tokio_tungstenite::{connect_async, tungstenite::Message};
-use binance_spot_connector_rust::http::{request::RequestBuilder, Method};
 
 use crate::errors::BinanceError;
 use crate::output::{CommandOutput, OutputFormat};
-use crate::AppContext;
+use crate::{normalize_pair_ws, AppContext};
 
 const DEFAULT_WS_HOST: &str = "wss://stream.binance.com:9443/ws";
 
@@ -15,8 +15,8 @@ const DEFAULT_WS_HOST: &str = "wss://stream.binance.com:9443/ws";
 pub enum WebSocketCommand {
     /// Stream order book depth updates
     Depth {
-        /// Trading pair (lowercase, e.g., btcusdt, bnbusdt)
-        symbol: String,
+        /// Trading pair (e.g., BTCUSDT, btc_usdt, or btc/usdt)
+        pair: String,
 
         /// Stop after receiving this many data messages
         #[arg(short, long)]
@@ -29,8 +29,8 @@ pub enum WebSocketCommand {
 
     /// Stream real-time 24hr ticker updates
     Ticker {
-        /// Trading pair (lowercase, e.g., btcusdt, bnbusdt)
-        symbol: String,
+        /// Trading pair (e.g., BTCUSDT, btc_usdt, or btc/usdt)
+        pair: String,
 
         /// Stop after receiving this many data messages
         #[arg(short, long)]
@@ -43,8 +43,8 @@ pub enum WebSocketCommand {
 
     /// Stream real-time best bid/ask book ticker updates
     BookTicker {
-        /// Trading pair (lowercase, e.g., btcusdt, bnbusdt)
-        symbol: String,
+        /// Trading pair (e.g., BTCUSDT, btc_usdt, or btc/usdt)
+        pair: String,
 
         /// Stop after receiving this many data messages
         #[arg(short, long)]
@@ -93,37 +93,68 @@ impl WebSocketCommand {
     pub async fn execute(&self, ctx: &AppContext) -> Result<CommandOutput, BinanceError> {
         match self {
             Self::Depth {
-                symbol,
+                pair,
                 limit,
                 seconds,
             } => {
-                let sym = symbol.to_lowercase();
-                stream_market_ticker(&sym, "depth", "Depth Updates", ctx.format, StreamBounds::new(*limit, *seconds)).await?;
+                let sym = normalize_pair_ws(pair);
+                stream_market_ticker(
+                    &sym,
+                    "depth",
+                    "Depth Updates",
+                    ctx.format,
+                    StreamBounds::new(*limit, *seconds),
+                )
+                .await?;
             }
             Self::Ticker {
-                symbol,
+                pair,
                 limit,
                 seconds,
             } => {
-                let sym = symbol.to_lowercase();
-                stream_market_ticker(&sym, "ticker", "Ticker Updates", ctx.format, StreamBounds::new(*limit, *seconds)).await?;
+                let sym = normalize_pair_ws(pair);
+                stream_market_ticker(
+                    &sym,
+                    "ticker",
+                    "Ticker Updates",
+                    ctx.format,
+                    StreamBounds::new(*limit, *seconds),
+                )
+                .await?;
             }
             Self::BookTicker {
-                symbol,
+                pair,
                 limit,
                 seconds,
             } => {
-                let sym = symbol.to_lowercase();
-                stream_market_ticker(&sym, "bookTicker", "Book Ticker Updates", ctx.format, StreamBounds::new(*limit, *seconds)).await?;
+                let sym = normalize_pair_ws(pair);
+                stream_market_ticker(
+                    &sym,
+                    "bookTicker",
+                    "Book Ticker Updates",
+                    ctx.format,
+                    StreamBounds::new(*limit, *seconds),
+                )
+                .await?;
             }
             Self::User { limit, seconds } => {
                 stream_user_events(ctx, None, StreamBounds::new(*limit, *seconds)).await?;
             }
             Self::Orders { limit, seconds } => {
-                stream_user_events(ctx, Some("executionReport"), StreamBounds::new(*limit, *seconds)).await?;
+                stream_user_events(
+                    ctx,
+                    Some("executionReport"),
+                    StreamBounds::new(*limit, *seconds),
+                )
+                .await?;
             }
             Self::Balances { limit, seconds } => {
-                stream_user_events(ctx, Some("outboundAccountPosition"), StreamBounds::new(*limit, *seconds)).await?;
+                stream_user_events(
+                    ctx,
+                    Some("outboundAccountPosition"),
+                    StreamBounds::new(*limit, *seconds),
+                )
+                .await?;
             }
         }
         Ok(CommandOutput::new(Value::Null, "").with_format(ctx.format))
@@ -166,7 +197,12 @@ async fn stream_market_ticker(
         .await
         .map_err(|e| BinanceError::WebSocket(e.to_string()))?;
 
-    eprintln!("{} Subscribed to {} for {}", "WS".green().bold(), stream_type, symbol);
+    eprintln!(
+        "{} Subscribed to {} for {}",
+        "WS".green().bold(),
+        stream_type,
+        symbol
+    );
 
     let mut data_count = 0usize;
     let deadline = bounds.deadline();
@@ -179,10 +215,9 @@ async fn stream_market_ticker(
 
         match msg {
             Ok(Message::Text(text)) => {
-                let data: Value = serde_json::from_str(&text).map_err(|e| {
-                    BinanceError::WebSocket(format!("Failed to parse JSON: {}", e))
-                })?;
-                
+                let data: Value = serde_json::from_str(&text)
+                    .map_err(|e| BinanceError::WebSocket(format!("Failed to parse JSON: {}", e)))?;
+
                 let output = CommandOutput::new(data, label).with_format(format);
                 println!("{}", output.render());
                 data_count += 1;
@@ -248,9 +283,14 @@ async fn stream_user_events(
             tokio::time::sleep(tokio::time::Duration::from_secs(30 * 60)).await;
             let keep_req = RequestBuilder::new(Method::Put, "/api/v3/userDataStream")
                 .params(vec![("listenKey", lk.as_str())])
-                .credentials(binance_spot_connector_rust::http::Credentials::from_hmac(&api_key, ""));
+                .credentials(binance_spot_connector_rust::http::Credentials::from_hmac(
+                    &api_key, "",
+                ));
             match client_clone.send_request(keep_req).await {
-                Ok(_) => eprintln!("{} User stream listenKey keep-alive sent successfully", "WS".blue().bold()),
+                Ok(_) => eprintln!(
+                    "{} User stream listenKey keep-alive sent successfully",
+                    "WS".blue().bold()
+                ),
                 Err(e) => eprintln!("{} User stream keep-alive failed: {}", "WS".red().bold(), e),
             }
         }
@@ -267,12 +307,15 @@ async fn stream_user_events(
 
         match msg {
             Ok(Message::Text(text)) => {
-                let data: Value = serde_json::from_str(&text).map_err(|e| {
-                    BinanceError::WebSocket(format!("Failed to parse JSON: {}", e))
-                })?;
+                let data: Value = serde_json::from_str(&text)
+                    .map_err(|e| BinanceError::WebSocket(format!("Failed to parse JSON: {}", e)))?;
 
-                let event_type = data.get("e").and_then(|v| v.as_str()).unwrap_or("").to_string();
-                
+                let event_type = data
+                    .get("e")
+                    .and_then(|v| v.as_str())
+                    .unwrap_or("")
+                    .to_string();
+
                 if let Some(filter) = filter_event {
                     if event_type != filter {
                         continue;

@@ -14,6 +14,32 @@ use crate::commands::{
 use crate::errors::BinanceError;
 use crate::output::{CommandOutput, OutputFormat};
 
+pub(crate) fn normalize_pair(pair: &str) -> String {
+    pair.replace(['_', '-', '/'], "").to_uppercase()
+}
+
+pub(crate) fn normalize_pair_ws(pair: &str) -> String {
+    normalize_pair(pair).to_lowercase()
+}
+
+#[cfg(test)]
+mod pair_tests {
+    use super::*;
+
+    #[test]
+    fn normalizes_pair_for_api() {
+        assert_eq!(normalize_pair("BTCUSDT"), "BTCUSDT");
+        assert_eq!(normalize_pair("btc_usdt"), "BTCUSDT");
+        assert_eq!(normalize_pair("btc-usdt"), "BTCUSDT");
+        assert_eq!(normalize_pair("btc/usdt"), "BTCUSDT");
+    }
+
+    #[test]
+    fn normalizes_pair_for_websocket() {
+        assert_eq!(normalize_pair_ws("BTC_USDT"), "btcusdt");
+    }
+}
+
 /// Global application context.
 #[derive(Clone)]
 pub struct AppContext {
@@ -243,24 +269,46 @@ pub async fn dispatch_non_shell(
         Command::ServerTime => market::MarketCommand::ServerTime.execute(ctx).await,
         Command::ExchangeInfo => market::MarketCommand::ExchangeInfo.execute(ctx).await,
         Command::Ticker { pair } => {
-            market::MarketCommand::Ticker { symbol: pair }.execute(ctx).await
+            market::MarketCommand::Ticker {
+                symbol: normalize_pair(&pair),
+            }
+                .execute(ctx)
+                .await
         }
         Command::TickerAll => market::MarketCommand::TickerAll.execute(ctx).await,
         Command::Price { pair } => {
-            market::MarketCommand::Price { symbol: pair }.execute(ctx).await
+            market::MarketCommand::Price {
+                symbol: normalize_pair(&pair),
+            }
+                .execute(ctx)
+                .await
         }
         Command::BookTicker { pair } => {
-            market::MarketCommand::BookTicker { symbol: pair }.execute(ctx).await
+            market::MarketCommand::BookTicker {
+                symbol: normalize_pair(&pair),
+            }
+                .execute(ctx)
+                .await
         }
         Command::Orderbook { pair, count } => {
-            market::MarketCommand::Orderbook { symbol: pair, limit: count }.execute(ctx).await
+            market::MarketCommand::Orderbook {
+                symbol: normalize_pair(&pair),
+                limit: count,
+            }
+            .execute(ctx)
+            .await
         }
         Command::Trades { pair, count } => {
-            market::MarketCommand::Trades { symbol: pair, limit: count }.execute(ctx).await
+            market::MarketCommand::Trades {
+                symbol: normalize_pair(&pair),
+                limit: count,
+            }
+            .execute(ctx)
+            .await
         }
         Command::HistoricalTrades { pair, count, since } => {
             market::MarketCommand::HistoricalTrades {
-                symbol: pair,
+                symbol: normalize_pair(&pair),
                 limit: count,
                 from_id: since,
             }
@@ -268,11 +316,20 @@ pub async fn dispatch_non_shell(
             .await
         }
         Command::AggTrades { pair, count } => {
-            market::MarketCommand::AggTrades { symbol: pair, limit: count }.execute(ctx).await
+            market::MarketCommand::AggTrades {
+                symbol: normalize_pair(&pair),
+                limit: count,
+            }
+            .execute(ctx)
+            .await
         }
-        Command::Ohlc { pair, interval, count } => {
+        Command::Ohlc {
+            pair,
+            interval,
+            count,
+        } => {
             market::MarketCommand::Klines {
-                symbol: pair,
+                symbol: normalize_pair(&pair),
                 interval,
                 limit: count,
             }
@@ -285,7 +342,7 @@ pub async fn dispatch_non_shell(
         Command::Balance => account::AccountCommand::Balance.execute(ctx).await,
         Command::TradesHistory { pair, count, since } => {
             account::AccountCommand::Trades {
-                symbol: pair,
+                symbol: normalize_pair(&pair),
                 limit: count,
                 from_id: since,
             }
@@ -298,9 +355,12 @@ pub async fn dispatch_non_shell(
 
         // === Funding Operations ===
         Command::Deposit(cmd) => cmd.execute(ctx).await,
-        Command::Withdraw { asset, volume, address, network } => {
-            funding::execute_withdraw(ctx, &asset, &volume, &address, network.as_deref()).await
-        }
+        Command::Withdraw {
+            asset,
+            volume,
+            address,
+            network,
+        } => funding::execute_withdraw(ctx, &asset, &volume, &address, network.as_deref()).await,
         Command::Withdrawal(cmd) => cmd.execute(ctx).await,
 
         // === WS, Paper, Auth, Shell, Mcp ===

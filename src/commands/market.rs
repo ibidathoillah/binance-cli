@@ -1,6 +1,6 @@
-use clap::Subcommand;
 use binance_spot_connector_rust::market;
 use binance_spot_connector_rust::market::klines::KlineInterval;
+use clap::Subcommand;
 
 use crate::errors::BinanceError;
 use crate::output::CommandOutput;
@@ -114,7 +114,10 @@ fn parse_interval(s: &str) -> Result<KlineInterval, BinanceError> {
         "3d" => Ok(KlineInterval::Days3),
         "1w" => Ok(KlineInterval::Weeks1),
         "1M" | "1mon" | "1month" => Ok(KlineInterval::Months1),
-        _ => Err(BinanceError::Validation(format!("Invalid kline interval: {}", s))),
+        _ => Err(BinanceError::Validation(format!(
+            "Invalid kline interval: {}",
+            s
+        ))),
     }
 }
 
@@ -198,7 +201,7 @@ impl MarketCommand {
                 if let Some(id) = from_id {
                     request = request.from_id(*id);
                 }
-                
+
                 // Historical trades requires an API Key
                 if let Some(creds) = &ctx.client.require_credentials().ok() {
                     let binance_creds = creds.to_binance_credentials();
@@ -216,7 +219,11 @@ impl MarketCommand {
                 CommandOutput::new(result, format!("Aggregate Trades — {}", sym))
             }
 
-            Self::Klines { symbol, interval, limit } => {
+            Self::Klines {
+                symbol,
+                interval,
+                limit,
+            } => {
                 let sym = symbol.to_uppercase();
                 let parsed_int = parse_interval(interval)?;
                 let request = market::klines(&sym, parsed_int).limit(*limit);

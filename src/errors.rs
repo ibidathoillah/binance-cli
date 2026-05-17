@@ -1,6 +1,6 @@
-use thiserror::Error;
-use binance_spot_connector_rust::hyper::Error as BinanceConnectorError;
 use binance_spot_connector_rust::http::error::ClientError;
+use binance_spot_connector_rust::hyper::Error as BinanceConnectorError;
+use thiserror::Error;
 
 /// Structured error type for the Binance CLI.
 /// Maps to a stable `error` category in JSON error envelopes.
@@ -143,16 +143,41 @@ mod tests {
 
     #[test]
     fn test_error_categories() {
-        assert_eq!(BinanceError::Api { code: 1, message: "err".to_string() }.category(), "api");
+        assert_eq!(
+            BinanceError::Api {
+                code: 1,
+                message: "err".to_string()
+            }
+            .category(),
+            "api"
+        );
         assert_eq!(BinanceError::Auth("err".to_string()).category(), "auth");
-        assert_eq!(BinanceError::Network("err".to_string()).category(), "network");
-        assert_eq!(BinanceError::Validation("err".to_string()).category(), "validation");
-        assert_eq!(BinanceError::RateLimit("err".to_string()).category(), "rate_limit");
+        assert_eq!(
+            BinanceError::Network("err".to_string()).category(),
+            "network"
+        );
+        assert_eq!(
+            BinanceError::Validation("err".to_string()).category(),
+            "validation"
+        );
+        assert_eq!(
+            BinanceError::RateLimit("err".to_string()).category(),
+            "rate_limit"
+        );
         assert_eq!(BinanceError::Config("err".to_string()).category(), "config");
-        assert_eq!(BinanceError::Io(std::io::Error::new(std::io::ErrorKind::Other, "io")).category(), "io");
+        assert_eq!(
+            BinanceError::Io(std::io::Error::new(std::io::ErrorKind::Other, "io")).category(),
+            "io"
+        );
         assert_eq!(BinanceError::Parse("err".to_string()).category(), "parse");
-        assert_eq!(BinanceError::WebSocket("err".to_string()).category(), "websocket");
-        assert_eq!(BinanceError::Internal("err".to_string()).category(), "internal");
+        assert_eq!(
+            BinanceError::WebSocket("err".to_string()).category(),
+            "websocket"
+        );
+        assert_eq!(
+            BinanceError::Internal("err".to_string()).category(),
+            "internal"
+        );
     }
 
     #[test]
