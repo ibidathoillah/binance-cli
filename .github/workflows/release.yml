@@ -100,7 +100,8 @@ jobs:
       - name: Publish
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
-        run: npm publish --access public || echo "Already published"
+        run: |
+          npm publish --access public || echo "Already published"
 
   publish-docker:
     name: Publish to Docker Hub
@@ -124,7 +125,6 @@ jobs:
             ${{ secrets.DOCKER_USERNAME }}/binance-cli:${{ github.ref_name }}
             ${{ secrets.DOCKER_USERNAME }}/binance-cli:latest
 
-  github-release:
   publish-gpr:
     name: Publish to GitHub Packages (NPM)
     needs: build-and-release
@@ -173,6 +173,8 @@ jobs:
           tags: |
             ghcr.io/${{ github.repository }}:${{ github.ref_name }}
             ghcr.io/${{ github.repository }}:latest
+
+  github-release:
     name: GitHub Release
     needs: build-and-release
     runs-on: ubuntu-latest
