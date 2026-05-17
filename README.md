@@ -287,7 +287,7 @@ graph TD
     B --> C[AppContext]
     C --> D[BinanceHttpClient wrapper]
     C --> E[Output dispatcher JSON/Table]
-    D --> F[Spot Connector (Hyper) & Futures (Reqwest)]
+    D --> F[Spot Connector (Hyper) and Futures (Reqwest)]
     F --> G[Binance Spot REST API and WebSocket]
     B --> H[Interactive shell REPL]
     B --> I[Model Context Protocol server]
