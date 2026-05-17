@@ -1,0 +1,12 @@
+src/
+target/
+tests/
+Cargo.toml
+Cargo.lock
+Dockerfile
+.github/
+.gitignore
+*.md
+!README.md
+bin/binance
+bin/binance.exe

@@ -1,0 +1,32 @@
+{
+  "name": "@ibidathoillah/binance-cli",
+  "version": "0.1.0",
+  "description": "Command-line interface and Model Context Protocol (MCP) server for the Binance cryptocurrency exchange, built in Rust",
+  "bin": {
+    "binance": "./bin/binance.js"
+  },
+  "scripts": {
+    "postinstall": "node scripts/install.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/ibidathoillah/binance-cli.git"
+  },
+  "keywords": [
+    "binance",
+    "crypto",
+    "cli",
+    "trading",
+    "mcp",
+    "rust"
+  ],
+  "author": "Ibida Thoillah",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/ibidathoillah/binance-cli/issues"
+  },
+  "homepage": "https://github.com/ibidathoillah/binance-cli#readme",
+  "publishConfig": {
+    "access": "public"
+  }
+}
