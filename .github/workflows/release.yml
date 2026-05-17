@@ -125,6 +125,54 @@ jobs:
             ${{ secrets.DOCKER_USERNAME }}/binance-cli:latest
 
   github-release:
+  publish-gpr:
+    name: Publish to GitHub Packages (NPM)
+    needs: build-and-release
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          registry-url: "https://npm.pkg.github.com"
+          scope: "@ibidathoillah"
+      - name: Publish to GPR
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          sed -i 's|https://registry.npmjs.org|https://npm.pkg.github.com|g' package.json || true
+          npm publish || echo "Already published to GPR"
+
+  publish-ghcr:
+    name: Publish to GHCR
+    needs: build-and-release
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Log in to GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - name: Build and Push to GHCR
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          file: ./Dockerfile
+          push: true
+          tags: |
+            ghcr.io/${{ github.repository }}:${{ github.ref_name }}
+            ghcr.io/${{ github.repository }}:latest
     name: GitHub Release
     needs: build-and-release
     runs-on: ubuntu-latest
