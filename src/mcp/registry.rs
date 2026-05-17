@@ -133,11 +133,11 @@ mod tests {
         let registry = ToolRegistry::build();
         assert!(!registry.tools().is_empty());
 
-        // Find binance_market_price
-        let entry = registry.get_tool("binance_market_price");
+        // Find binance_price
+        let entry = registry.get_tool("binance_price");
         assert!(entry.is_some());
         let entry = entry.unwrap();
-        assert_eq!(entry.command_path, vec!["market", "price"]);
+        assert_eq!(entry.command_path, vec!["price"]);
         assert!(entry.tool.description.is_some());
     }
 }

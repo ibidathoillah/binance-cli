@@ -8,9 +8,9 @@ pub mod auth;
 pub mod utility;
 
 pub use market::MarketCommand;
-pub use trade::TradeCommand;
+pub use trade::OrderCommand;
 pub use account::AccountCommand;
-pub use funding::FundingCommand;
+pub use funding::{DepositCommand, WithdrawalCommand, execute_withdraw};
 pub use websocket::WebSocketCommand;
 pub use paper::PaperCommand;
 pub use auth::AuthCommand;

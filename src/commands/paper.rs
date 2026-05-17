@@ -41,6 +41,7 @@ mod tests {
             client: crate::client::BinanceHttpClient::new("https://api.binance.com", None),
             format: OutputFormat::Table,
             verbose: false,
+            yes: false,
         };
         let res = cmd.execute(&ctx).await.unwrap();
         assert_eq!(res.label, "Paper Balances");

@@ -111,6 +111,7 @@ impl ServerHandler for BinanceMcpService {
             client: self.client.clone(),
             format: OutputFormat::Json,
             verbose: false,
+            yes: false,
         };
 
         match dispatch(&ctx, cli.command).await {

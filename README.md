@@ -1,208 +1,206 @@
-# ⚡ Unofficial Binance Spot CLI in Rust ⚡
+# binance-cli
 
-[![Rust](https://img.shields.io/badge/rust-stable-orange.svg?style=flat-square&logo=rust)](https://www.rust-lang.org)
-[![License](https://img.shields.io/badge/license-MIT-blue.svg?style=flat-square)](LICENSE)
-[![Binance Spot](https://img.shields.io/badge/Binance-Spot%20API-yellow.svg?style=flat-square)](https://developers.binance.com)
+Unofficial Rust CLI for Binance Spot. Use it to inspect markets, manage account data, place spot orders, stream live WebSocket events, run a local interactive shell, and expose the same command surface to agents through MCP.
 
-A high-performance, beautiful, and modular Command-Line Interface (CLI) for the Binance Spot exchange, built with Rust. This tool replicates the premium architecture of bittime-cli, indodax-cli, and kraken-cli, offering visual console tables, real-time WebSocket streams, a secure config system, a stateful REPL interactive shell, and Model Context Protocol (MCP) server support for AI orchestrations.
+[![Rust](https://img.shields.io/badge/Rust-2021-000000?logo=rust)](https://www.rust-lang.org/)
+[![CLI](https://img.shields.io/badge/interface-terminal-2f855a)](#quick-start)
+[![WebSocket](https://img.shields.io/badge/websocket-live-2563eb)](#websocket-streaming)
+[![MCP](https://img.shields.io/badge/MCP-ready-7c3aed)](#mcp-server)
+[![License](https://img.shields.io/badge/license-MIT-blue)](LICENSE)
 
-```
-╔══════════════════════════════════════════╗
-║        Binance Interactive Shell         ║
-║  Type commands without 'binance' prefix  ║
-║  Type 'help' or 'exit' to quit           ║
-╚══════════════════════════════════════════╝
+## Highlights
 
-binance> market price BTCUSDT
-Price — BTCUSDT
-+--------+----------------+
-| Field  | Value          |
-+=========================+
-| price  | 78086.61000000 |
-|--------+----------------|
-| symbol | BTCUSDT        |
-+--------+----------------+
-```
+- Public market data: ping, server time, exchange info, tickers, order book, trades, aggregate trades, and OHLC/klines.
+- Private account data: balances, account info, open orders, all orders, and trade history.
+- Spot trading: market and limit buy/sell, query order, cancel order, cancel all orders.
+- Funding: deposit address, deposit history, withdrawal history, and crypto withdrawals.
+- Real-time streams: depth, ticker, book ticker, user data, order events, and balance events.
+- Interactive shell: stateful REPL with persistent history at `~/.config/binance/history`.
+- Paper trading: local simulated balances for safe command validation.
+- Automation-friendly output: human tables by default, JSON envelopes with `-o json`.
+- Credential resolution: CLI flags, environment variables, or `~/.config/binance/config.toml`.
+- Agent support: MCP server mode for tool discovery and JSON-RPC execution.
 
----
+## Installation
 
-## ✨ Features
+Install from source:
 
-*   **⚡ High Performance**: Written in pure Rust with asynchronous token pipelines powered by `tokio` and `hyper`.
-*   **🎨 Premium Typography & Tables**: Auto-renders JSON structures into beautiful console tables with responsive layout systems and curated color rules (e.g. ASK = 🔴, BID = 🟢, Tickers = 🟡).
-*   **🛠️ Robust Config Manager**: Secure credentials storage at `~/.config/binance/config.toml` (restricted to `0600` permissions) supporting priority overrides: CLI arguments > Environment variables > config.toml.
-*   **🔄 Fully Stateful REPL Shell**: Runs an embedded readline shell with tab history preservation (`~/.config/binance/history`) and clean error isolation.
-*   **📡 Smart WebSocket Streams**: Real-time ticker order book stream depth, and secure private user streams with a background thread executing automatic keep-alive `PUT` requests every 30 minutes.
-*   **🤖 Model Context Protocol (MCP)**: Directly exposes CLI clap parameters into AI tools, converting arguments dynamically to JSON-schema for seamless LLM orchestrations.
-*   **📉 Virtual Paper Trading**: Built-in mock portfolio balance tracker (`USDT`, `BTC`, `BNB`) for safe local CLI validation.
-
----
-
-## 🛠️ Architecture Overview
-
-```mermaid
-graph TD
-    A[binance-cli Binary] --> B[Clap Command Dispatcher]
-    B --> C[AppContext]
-    C --> D[BinanceHttpClient Wrapper]
-    C --> E[Output Dispatcher JSON/Table]
-    D --> F[Official Spot Connector Rust Crate]
-    F --> G[Binance Spot REST API & Websockets]
-    B --> H[Interactive Shell REPL]
-    B --> I[Model Context Protocol MCP Server]
-```
-
----
-
-## 🚀 Quick Start & Installation
-
-You can install `binance-cli` using any of the following premium package formats:
-
-### 📦 Option A: Via NPM (Global Executable)
-No Rust toolchain required! The Node package manager will automatically detect your OS/architecture and fetch the pre-compiled native binary securely:
 ```bash
-# Install globally
-npm install -g @ibidathoillah/binance-cli
-
-# Run immediately
-binance market server-time
+git clone https://github.com/ibidathoillah/binance-cli.git
+cd binance-cli
+cargo install --path .
 ```
 
-### 🦀 Option B: Via Cargo (crates.io)
-If you already have the Rust environment ready, you can install directly from crates.io:
+Install from crates.io:
+
 ```bash
 cargo install binance-cli
 ```
 
-### 🐳 Option C: Via Docker (Containerized)
-Run anywhere instantly without local dependencies:
+Install from npm:
+
 ```bash
-# Pull the latest official image
-docker pull ibidathoillah/binance-cli
+npm install -g @ibidathoillah/binance-cli
+```
 
-# Run a quick command
-docker run --rm ibidathoillah/binance-cli market server-time
+Run with Docker:
 
-# Run stateful Interactive REPL Shell
+```bash
+docker run --rm ibidathoillah/binance-cli server-time
 docker run -it --rm -v ~/.config/binance:/root/.config/binance ibidathoillah/binance-cli shell
 ```
 
-### 🏗️ Option D: Build from Source
+Run from the checkout:
+
 ```bash
-# Clone the repository
-git clone https://github.com/ibidathoillah/binance-cli.git
-cd binance-cli
-
-# Build in release mode
-cargo build --release
-
-# Run test suite
-cargo test
+cargo build
+./target/debug/binance --help
 ```
-The compiled binary will be available at `./target/release/binance`.
 
----
+## Quick Start
 
-## 🔑 Authentication Config Setup
-
-Initialize your credentials securely:
+Market data does not require credentials:
 
 ```bash
-# Set credentials interactively or directly
+binance ping
+binance server-time
+binance price BTCUSDT
+binance ticker BTCUSDT
+binance orderbook BTCUSDT --count 10
+binance -o json book-ticker BTCUSDT
+```
+
+Configure private API credentials:
+
+```bash
 binance auth set --api-key YOUR_API_KEY --api-secret YOUR_API_SECRET
-
-# Verify your credentials connection
 binance auth test
-
-# Show current credential metadata
 binance auth show
 ```
 
-The config will be securely stored under `~/.config/binance/config.toml`.
+Or use environment variables:
 
----
-
-## 📖 Command Guide
-
-### 1. Market Data (Public endpoints)
 ```bash
-# Ping the Binance REST API
-binance market ping
-
-# Check UTC Server Timestamp
-binance market server-time
-
-# Fetch Symbol Price
-binance market price BTCUSDT
-
-# Check 24-Hour Change Ticker
-binance market ticker BTCUSDT
-
-# Get Order Book Depth
-binance market orderbook BTCUSDT --limit 20
-
-# View Recent Candlestick Klines
-binance market klines BTCUSDT --interval 5m --limit 50
+export BINANCE_API_KEY=your_api_key
+export BINANCE_API_SECRET=your_api_secret
 ```
 
-### 2. Trading Operations (Private endpoints)
-```bash
-# Place a LIMIT BUY Order (Price & Qty)
-binance trade buy BTCUSDT --quantity 0.005 --price 76500
+Credential priority:
 
-# Place a MARKET SELL Order (Qty only)
-binance trade sell BTCUSDT --type MARKET --quantity 0.002
+1. `--api-key` and `--api-secret`
+2. `BINANCE_API_KEY` and `BINANCE_API_SECRET`
+3. `~/.config/binance/config.toml`
 
-# List Open Orders
-binance trade open-orders --symbol BTCUSDT
+## Command Reference
 
-# Cancel an Order
-binance trade cancel BTCUSDT --order-id 1872651
+Global options:
 
-# Cancel all open orders for a symbol
-binance trade cancel-all BTCUSDT
+```text
+binance [OPTIONS] <COMMAND>
+
+Options:
+  -o, --output <table|json>      Output format [default: table]
+      --api-key <API_KEY>        API key override
+      --api-secret <API_SECRET>  API secret override
+  -v, --verbose                  Enable verbose logs
+      --host <HOST>              Override API host
 ```
 
-### 3. Funding & Balances
+### Market
+
 ```bash
-# Get non-zero account balances
-binance account balance
-
-# Request Deposit Address
-binance funding deposit-address --coin BTC
-
-# Withdraw Assets
-binance funding withdraw --coin USDT --amount 100 --address destination_wallet_address
+binance ping
+binance server-time
+binance exchange-info
+binance ticker BTCUSDT
+binance ticker-all
+binance price BTCUSDT
+binance book-ticker BTCUSDT
+binance orderbook BTCUSDT --count 10
+binance trades BTCUSDT --count 5
+binance agg-trades BTCUSDT --count 5
+binance historical-trades BTCUSDT --count 5
+binance ohlc BTCUSDT --interval 1m --count 5
 ```
 
-### 4. WebSocket Streaming
+### Account
+
 ```bash
-# Stream Order Book Depth updates
-binance ws depth BTCUSDT
+binance account-info
+binance balance
+binance trades-history BTCUSDT --count 5
+```
 
-# Stream Real-time 24h Ticker updates
-binance ws ticker BTCUSDT
+### Trading
 
-# Stream Real-time Best Bid/Ask Book Ticker updates
-binance ws book-ticker BTCUSDT
+```bash
+binance order buy BTCUSDT -t LIMIT --price 76500 --volume 0.005
+binance order sell BTCUSDT -t MARKET --volume 0.002
+binance order cancel BTCUSDT --order-id 1872651
+binance order cancel-all BTCUSDT
+binance order query BTCUSDT --order-id 1872651
+binance order open-orders --pair BTCUSDT
+binance order all-orders BTCUSDT --count 5
+```
 
-# Stream User Data updates (balances, order executions)
+### Funding
+
+```bash
+binance deposit addresses USDT --network ETH
+binance deposit status --asset USDT
+binance withdrawal status --asset USDT
+binance withdraw --asset USDT --volume 100 --address destination_wallet_address --network ETH
+```
+
+### Paper Trading
+
+```bash
+binance paper balance
+```
+
+Paper trading currently provides a local simulated portfolio (`USDT`, `BTC`, `BNB`) for safe CLI validation.
+
+### WebSocket Streaming
+
+Market streams:
+
+```bash
+binance ws depth btcusdt
+binance ws ticker btcusdt
+binance ws book-ticker btcusdt
+binance ws ticker btcusdt --limit 1 --seconds 15
+```
+
+Private streams:
+
+```bash
 binance ws user
+binance ws orders
+binance ws balances
 ```
 
-### 5. Interactive REPL Shell
+The WebSocket client supports bounded smoke tests and Binance user-data listen-key keepalive.
+
+### Interactive Shell
+
 ```bash
-# Start interactive shell
 binance shell
 ```
 
----
+Example shell session:
 
-## 🤖 Model Context Protocol (MCP) Integration
+```text
+binance> price BTCUSDT
+Price - BTCUSDT
+```
 
-This CLI includes a native Model Context Protocol stdio server to connect it directly to AI tools (such as Claude Desktop, Cursor, or Trae).
+### MCP Server
 
-To register `binance-cli` to your MCP client config, add:
+```bash
+binance mcp
+```
+
+Example MCP client configuration:
 
 ```json
 {
@@ -219,14 +217,74 @@ To register `binance-cli` to your MCP client config, add:
 }
 ```
 
-The MCP engine dynamically parses the clap CLI command structure, auto-registers schemas, and routes execution calls safely, formatting standard JSON responses directly back to the LLM.
+The MCP server dynamically maps the Clap command tree into JSON-schema tools and routes execution through the same Rust command handlers as the CLI.
 
----
+## E2E Testing
 
-## 📝 License
+The repository includes live API smoke tests:
 
-Distributed under the MIT License. See [LICENSE](LICENSE) for more information.
+```bash
+./scripts/e2e_test.sh --public
+./scripts/e2e_test.sh --private
+./scripts/e2e_test.sh --ws
+```
 
----
+Environment knobs:
 
-*Made with 🦀 and 💖 for premium CLI experiences.*
+```bash
+BINANCE_TEST_PAIR=BTCUSDT
+BINANCE_TEST_COIN=USDT
+BINANCE_BIN=./target/debug/binance
+```
+
+Latest local verification:
+
+```text
+cargo test: 25 passed
+./scripts/e2e_test.sh --public: 20 passed
+./scripts/e2e_test.sh --private: 9 skipped (credentials unavailable)
+./scripts/e2e_test.sh --ws: 2 passed, 1 skipped (credentials unavailable)
+```
+
+## API Coverage
+
+- REST API: Binance Spot API
+- Market WebSocket: `wss://stream.binance.com:9443/ws`
+- API docs: https://developers.binance.com/
+
+## Architecture
+
+```mermaid
+graph TD
+    A[binance binary] --> B[Clap command dispatcher]
+    B --> C[AppContext]
+    C --> D[BinanceHttpClient wrapper]
+    C --> E[Output dispatcher JSON/Table]
+    D --> F[Official Spot Connector Rust crate]
+    F --> G[Binance Spot REST API and WebSocket]
+    B --> H[Interactive shell REPL]
+    B --> I[Model Context Protocol server]
+```
+
+## Security
+
+- Credentials are stored with `0600` permissions when using `binance auth set`.
+- Prefer read-only API keys for account inspection and WebSocket monitoring.
+- Use IP restrictions on exchange API keys when possible.
+- Never commit real API keys, secrets, or listen keys.
+
+## Development
+
+```bash
+cargo fmt
+cargo test
+cargo build
+```
+
+## License
+
+MIT
+
+## Disclaimer
+
+This project is unofficial and is not affiliated with or endorsed by Binance. Cryptocurrency trading is risky; review commands carefully before using write-capable API keys.

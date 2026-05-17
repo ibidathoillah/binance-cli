@@ -23,6 +23,7 @@ async fn main() {
         client: client.clone(),
         format,
         verbose: cli.verbose,
+        yes: cli.yes,
     };
 
     if let Command::Mcp { allow_dangerous: _ } = &cli.command {

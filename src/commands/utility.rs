@@ -73,6 +73,7 @@ pub async fn run_shell(ctx: &AppContext) -> Result<(), BinanceError> {
                             client: ctx.client.clone(),
                             format: ctx.format,
                             verbose: cli.verbose || ctx.verbose,
+                            yes: cli.yes || ctx.yes,
                         };
 
                         match crate::dispatch_non_shell(&shell_ctx, cli.command).await {

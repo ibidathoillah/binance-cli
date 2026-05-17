@@ -8,11 +8,11 @@ use crate::output::CommandOutput;
 use crate::AppContext;
 
 #[derive(Debug, Subcommand)]
-pub enum TradeCommand {
+pub enum OrderCommand {
     /// Place a buy order
     Buy {
         /// Trading pair symbol (e.g., BTCUSDT)
-        symbol: String,
+        pair: String,
 
         /// Order type: LIMIT or MARKET
         #[arg(short = 't', long, default_value = "LIMIT")]
@@ -22,9 +22,9 @@ pub enum TradeCommand {
         #[arg(short, long)]
         price: Option<String>,
 
-        /// Order quantity
+        /// Order volume
         #[arg(short, long)]
-        quantity: String,
+        volume: String,
 
         /// Client order ID (optional)
         #[arg(long)]
@@ -34,7 +34,7 @@ pub enum TradeCommand {
     /// Place a sell order
     Sell {
         /// Trading pair symbol (e.g., BTCUSDT)
-        symbol: String,
+        pair: String,
 
         /// Order type: LIMIT or MARKET
         #[arg(short = 't', long, default_value = "LIMIT")]
@@ -44,9 +44,9 @@ pub enum TradeCommand {
         #[arg(short, long)]
         price: Option<String>,
 
-        /// Order quantity
+        /// Order volume
         #[arg(short, long)]
-        quantity: String,
+        volume: String,
 
         /// Client order ID (optional)
         #[arg(long)]
@@ -56,7 +56,7 @@ pub enum TradeCommand {
     /// Cancel an active order
     Cancel {
         /// Trading pair symbol
-        symbol: String,
+        pair: String,
 
         /// Order ID to cancel
         #[arg(long)]
@@ -66,13 +66,13 @@ pub enum TradeCommand {
     /// Cancel all active orders for a symbol
     CancelAll {
         /// Trading pair symbol
-        symbol: String,
+        pair: String,
     },
 
     /// Query a specific order's status
     Query {
         /// Trading pair symbol
-        symbol: String,
+        pair: String,
 
         /// Order ID to query
         #[arg(long)]
@@ -83,13 +83,13 @@ pub enum TradeCommand {
     OpenOrders {
         /// Trading pair symbol (optional)
         #[arg(short, long)]
-        symbol: Option<String>,
+        pair: Option<String>,
     },
 
     /// List all orders (active, canceled, filled)
     AllOrders {
         /// Trading pair symbol
-        symbol: String,
+        pair: String,
 
         /// Get orders >= this order ID (optional)
         #[arg(long)]
@@ -97,11 +97,11 @@ pub enum TradeCommand {
 
         /// Maximum number of orders (default: 500)
         #[arg(short, long, default_value = "500")]
-        limit: u32,
+        count: u32,
     },
 }
 
-impl TradeCommand {
+impl OrderCommand {
     pub async fn execute(&self, ctx: &AppContext) -> Result<CommandOutput, BinanceError> {
         let client = &ctx.client;
         let creds = client.require_credentials()?;
@@ -109,19 +109,19 @@ impl TradeCommand {
 
         let output = match self {
             Self::Buy {
-                symbol,
+                pair,
                 r#type,
                 price,
-                quantity,
+                volume,
                 client_order_id,
             } => {
                 self.place_order(
                     ctx,
-                    symbol,
+                    pair,
                     Side::Buy,
                     r#type,
                     price.as_deref(),
-                    quantity,
+                    volume,
                     client_order_id.as_deref(),
                     &binance_creds,
                 )
@@ -129,27 +129,27 @@ impl TradeCommand {
             }
 
             Self::Sell {
-                symbol,
+                pair,
                 r#type,
                 price,
-                quantity,
+                volume,
                 client_order_id,
             } => {
                 self.place_order(
                     ctx,
-                    symbol,
+                    pair,
                     Side::Sell,
                     r#type,
                     price.as_deref(),
-                    quantity,
+                    volume,
                     client_order_id.as_deref(),
                     &binance_creds,
                 )
                 .await?
             }
 
-            Self::Cancel { symbol, order_id } => {
-                let sym = symbol.to_uppercase();
+            Self::Cancel { pair, order_id } => {
+                let sym = pair.to_uppercase();
                 let request = trade::cancel_order(&sym)
                     .order_id(*order_id)
                     .credentials(&binance_creds);
@@ -158,8 +158,8 @@ impl TradeCommand {
                     .with_addendum(format!("Order {} cancelled", order_id))
             }
 
-            Self::CancelAll { symbol } => {
-                let sym = symbol.to_uppercase();
+            Self::CancelAll { pair } => {
+                let sym = pair.to_uppercase();
                 let request = trade::cancel_open_orders(&sym)
                     .credentials(&binance_creds);
                 let result = client.send_request(request).await?;
@@ -167,8 +167,8 @@ impl TradeCommand {
                     .with_addendum(format!("All open orders for {} cancelled successfully", sym))
             }
 
-            Self::Query { symbol, order_id } => {
-                let sym = symbol.to_uppercase();
+            Self::Query { pair, order_id } => {
+                let sym = pair.to_uppercase();
                 let request = trade::get_order(&sym)
                     .order_id(*order_id)
                     .credentials(&binance_creds);
@@ -176,9 +176,9 @@ impl TradeCommand {
                 CommandOutput::new(result, format!("Order {} — {}", order_id, sym))
             }
 
-            Self::OpenOrders { symbol } => {
+            Self::OpenOrders { pair } => {
                 let mut request = trade::open_orders().credentials(&binance_creds);
-                let title = if let Some(sym) = symbol {
+                let title = if let Some(sym) = pair {
                     let sym_upper = sym.to_uppercase();
                     request = request.symbol(&sym_upper);
                     format!("Open Orders — {}", sym_upper)
@@ -190,10 +190,10 @@ impl TradeCommand {
                 CommandOutput::new(result, title)
             }
 
-            Self::AllOrders { symbol, order_id, limit } => {
-                let sym = symbol.to_uppercase();
+            Self::AllOrders { pair, order_id, count } => {
+                let sym = pair.to_uppercase();
                 let mut request = trade::all_orders(&sym)
-                    .limit(*limit)
+                    .limit(*count)
                     .credentials(&binance_creds);
                 if let Some(oid) = order_id {
                     request = request.order_id(*oid);
@@ -211,19 +211,19 @@ impl TradeCommand {
     async fn place_order(
         &self,
         ctx: &AppContext,
-        symbol: &str,
+        pair: &str,
         side: Side,
         order_type: &str,
         price: Option<&str>,
-        quantity: &str,
+        volume: &str,
         client_order_id: Option<&str>,
         binance_creds: &binance_spot_connector_rust::http::Credentials,
     ) -> Result<CommandOutput, BinanceError> {
-        let sym = symbol.to_uppercase();
+        let sym = pair.to_uppercase();
         let otype = order_type.to_uppercase();
 
-        let qty_dec = Decimal::from_str(quantity).map_err(|e| {
-            BinanceError::Validation(format!("Invalid quantity '{}': {}", quantity, e))
+        let qty_dec = Decimal::from_str(volume).map_err(|e| {
+            BinanceError::Validation(format!("Invalid quantity '{}': {}", volume, e))
         })?;
 
         let mut request = trade::new_order(&sym, side, &otype)
@@ -256,7 +256,7 @@ impl TradeCommand {
 
             output = output.with_addendum(format!(
                 "{} {} {} @ {} — Order ID: {}",
-                side_str, quantity, sym, actual_price, order_id
+                side_str, volume, sym, actual_price, order_id
             ));
         }
 

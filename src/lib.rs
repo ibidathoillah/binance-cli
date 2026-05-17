@@ -20,6 +20,7 @@ pub struct AppContext {
     pub client: BinanceHttpClient,
     pub format: OutputFormat,
     pub verbose: bool,
+    pub yes: bool,
 }
 
 #[derive(Parser, Debug)]
@@ -47,6 +48,10 @@ pub struct Cli {
     #[arg(short, long, global = true)]
     pub verbose: bool,
 
+    /// Skip confirmation prompts for destructive operations
+    #[arg(long, alias = "force", global = true)]
+    pub yes: bool,
+
     /// Override API host URL
     #[arg(long, global = true)]
     pub host: Option<String>,
@@ -57,34 +62,165 @@ pub struct Cli {
 
 #[derive(Debug, Subcommand)]
 pub enum Command {
-    /// Market data (public, no API key needed)
-    #[command(subcommand)]
-    Market(market::MarketCommand),
+    // === Public Market Commands (originally nested under Market) ===
+    /// Test connectivity to the REST API
+    Ping,
 
-    /// Account information (requires API key)
-    #[command(subcommand)]
-    Account(account::AccountCommand),
+    /// Get the current server time
+    ServerTime,
 
-    /// Trading operations (requires API key)
-    #[command(subcommand)]
-    Trade(trade::TradeCommand),
+    /// Get exchange trading rules and symbol information
+    ExchangeInfo,
 
-    /// Funding: withdrawals, deposits
-    #[command(subcommand)]
-    Funding(funding::FundingCommand),
+    /// Get 24hr ticker price change statistics
+    Ticker {
+        /// Trading pair symbol (e.g., BTCUSDT, BNBUSDT)
+        pair: String,
+    },
 
+    /// Get 24hr ticker for all symbols
+    TickerAll,
+
+    /// Get latest price for a symbol
+    Price {
+        /// Trading pair symbol
+        pair: String,
+    },
+
+    /// Get best price/qty on the order book
+    BookTicker {
+        /// Trading pair symbol
+        pair: String,
+    },
+
+    /// Get order book depth
+    Orderbook {
+        /// Trading pair symbol
+        pair: String,
+
+        /// Limit number of price levels (default: 100, max: 5000)
+        #[arg(short, long, default_value = "100")]
+        count: u32,
+    },
+
+    /// Get recent trades
+    Trades {
+        /// Trading pair symbol
+        pair: String,
+
+        /// Number of trades to return (default: 500, max: 1000)
+        #[arg(short, long, default_value = "500")]
+        count: u32,
+    },
+
+    /// Get older historical trades (requires API key)
+    HistoricalTrades {
+        /// Trading pair symbol
+        pair: String,
+
+        /// Number of trades (default: 500)
+        #[arg(short, long, default_value = "500")]
+        count: u32,
+
+        /// Trade id to fetch from
+        #[arg(long, alias = "from-id")]
+        since: Option<u64>,
+    },
+
+    /// Get compressed/aggregate trades
+    AggTrades {
+        /// Trading pair symbol
+        pair: String,
+
+        /// Number of results (default: 500)
+        #[arg(short, long, default_value = "500")]
+        count: u32,
+    },
+
+    /// Get kline/candlestick bars for a symbol (OHLC)
+    Ohlc {
+        /// Trading pair symbol (e.g. BTCUSDT)
+        pair: String,
+
+        /// Interval (e.g. 1m, 3m, 5m, 15m, 30m, 1h, 2h, 4h, 6h, 8h, 12h, 1d, 3d, 1w, 1M)
+        #[arg(short, long, default_value = "1m")]
+        interval: String,
+
+        /// Limit number of bars (default: 500, max: 1000)
+        #[arg(short, long, default_value = "500")]
+        count: u32,
+    },
+
+    // === Account / Balances Commands (originally nested under Account) ===
+    /// Get current account information (balances, permissions, etc.)
+    AccountInfo,
+
+    /// Get non-zero account balances
+    Balance,
+
+    /// Get your trade history for a specific symbol
+    TradesHistory {
+        /// Trading pair symbol (e.g., BTCUSDT)
+        pair: String,
+
+        /// Number of trades to return (default: 500, max: 1000)
+        #[arg(short, long, default_value = "500")]
+        count: u32,
+
+        /// Start from this trade ID (optional)
+        #[arg(long, alias = "since-id", alias = "from-id")]
+        since: Option<u64>,
+    },
+
+    // === Trading Operations (originally nested under Trade) ===
+    /// Place and manage orders
+    #[command(subcommand)]
+    Order(trade::OrderCommand),
+
+    // === Funding Operations (originally nested under Funding) ===
+    /// Manage deposits
+    #[command(subcommand)]
+    Deposit(funding::DepositCommand),
+
+    /// Withdraw crypto to an external address
+    Withdraw {
+        /// Coin name (e.g. BNB, USDT)
+        #[arg(long)]
+        asset: String,
+
+        /// Amount to withdraw
+        #[arg(long)]
+        volume: String,
+
+        /// Destination address
+        #[arg(long)]
+        address: String,
+
+        /// Network to withdraw on (optional)
+        #[arg(long)]
+        network: Option<String>,
+    },
+
+    /// Manage withdrawals
+    #[command(subcommand)]
+    Withdrawal(funding::WithdrawalCommand),
+
+    // === WebSocket Streams ===
     /// WebSocket real-time data streams
     #[command(subcommand)]
     Ws(websocket::WebSocketCommand),
 
+    // === Paper Trading ===
     /// Paper trading (simulated)
     #[command(subcommand)]
     Paper(paper::PaperCommand),
 
+    // === API Credentials ===
     /// API credential management
     #[command(subcommand)]
     Auth(auth_cmds::AuthCommand),
 
+    // === Interactive Shell & MCP ===
     /// Interactive shell (REPL)
     Shell,
 
@@ -102,10 +238,72 @@ pub async fn dispatch_non_shell(
     command: Command,
 ) -> Result<CommandOutput, BinanceError> {
     match command {
-        Command::Market(cmd) => cmd.execute(ctx).await,
-        Command::Account(cmd) => cmd.execute(ctx).await,
-        Command::Trade(cmd) => cmd.execute(ctx).await,
-        Command::Funding(cmd) => cmd.execute(ctx).await,
+        // === Public Market Commands ===
+        Command::Ping => market::MarketCommand::Ping.execute(ctx).await,
+        Command::ServerTime => market::MarketCommand::ServerTime.execute(ctx).await,
+        Command::ExchangeInfo => market::MarketCommand::ExchangeInfo.execute(ctx).await,
+        Command::Ticker { pair } => {
+            market::MarketCommand::Ticker { symbol: pair }.execute(ctx).await
+        }
+        Command::TickerAll => market::MarketCommand::TickerAll.execute(ctx).await,
+        Command::Price { pair } => {
+            market::MarketCommand::Price { symbol: pair }.execute(ctx).await
+        }
+        Command::BookTicker { pair } => {
+            market::MarketCommand::BookTicker { symbol: pair }.execute(ctx).await
+        }
+        Command::Orderbook { pair, count } => {
+            market::MarketCommand::Orderbook { symbol: pair, limit: count }.execute(ctx).await
+        }
+        Command::Trades { pair, count } => {
+            market::MarketCommand::Trades { symbol: pair, limit: count }.execute(ctx).await
+        }
+        Command::HistoricalTrades { pair, count, since } => {
+            market::MarketCommand::HistoricalTrades {
+                symbol: pair,
+                limit: count,
+                from_id: since,
+            }
+            .execute(ctx)
+            .await
+        }
+        Command::AggTrades { pair, count } => {
+            market::MarketCommand::AggTrades { symbol: pair, limit: count }.execute(ctx).await
+        }
+        Command::Ohlc { pair, interval, count } => {
+            market::MarketCommand::Klines {
+                symbol: pair,
+                interval,
+                limit: count,
+            }
+            .execute(ctx)
+            .await
+        }
+
+        // === Account & Balance Commands ===
+        Command::AccountInfo => account::AccountCommand::Info.execute(ctx).await,
+        Command::Balance => account::AccountCommand::Balance.execute(ctx).await,
+        Command::TradesHistory { pair, count, since } => {
+            account::AccountCommand::Trades {
+                symbol: pair,
+                limit: count,
+                from_id: since,
+            }
+            .execute(ctx)
+            .await
+        }
+
+        // === Order Operations ===
+        Command::Order(cmd) => cmd.execute(ctx).await,
+
+        // === Funding Operations ===
+        Command::Deposit(cmd) => cmd.execute(ctx).await,
+        Command::Withdraw { asset, volume, address, network } => {
+            funding::execute_withdraw(ctx, &asset, &volume, &address, network.as_deref()).await
+        }
+        Command::Withdrawal(cmd) => cmd.execute(ctx).await,
+
+        // === WS, Paper, Auth, Shell, Mcp ===
         Command::Ws(cmd) => cmd.execute(ctx).await,
         Command::Paper(cmd) => cmd.execute(ctx).await,
         Command::Auth(cmd) => cmd.execute(ctx).await,
