@@ -15,3 +15,4 @@ pub use paper::PaperCommand;
 pub use trade::OrderCommand;
 pub use utility::run_shell;
 pub use websocket::WebSocketCommand;
+pub mod futures;
