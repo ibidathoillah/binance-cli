@@ -9,7 +9,7 @@ use clap::{Parser, Subcommand};
 
 use crate::client::BinanceHttpClient;
 use crate::commands::{
-    account, auth as auth_cmds, funding, market, paper, trade, utility, websocket,
+    account, auth as auth_cmds, funding, market, paper, trade, utility, websocket, futures as futures_cmds,
 };
 use crate::errors::BinanceError;
 use crate::output::{CommandOutput, OutputFormat};
@@ -240,6 +240,9 @@ pub enum Command {
     /// Paper trading (simulated)
     #[command(subcommand)]
     Paper(paper::PaperCommand),
+    /// Binance Futures (USDS-M)
+    #[command(subcommand)]
+    Futures(futures_cmds::FuturesCommand),
 
     // === API Credentials ===
     /// API credential management
@@ -366,6 +369,7 @@ pub async fn dispatch_non_shell(
         // === WS, Paper, Auth, Shell, Mcp ===
         Command::Ws(cmd) => cmd.execute(ctx).await,
         Command::Paper(cmd) => cmd.execute(ctx).await,
+        Command::Futures(cmd) => cmd.execute(ctx).await,
         Command::Auth(cmd) => cmd.execute(ctx).await,
         Command::Shell => Err(BinanceError::Config(
             "Shell command is not supported in this context".to_string(),

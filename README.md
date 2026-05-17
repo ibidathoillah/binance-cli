@@ -153,6 +153,21 @@ binance withdraw --asset usdt --volume 100 --address destination_wallet_address 
 ```
 
 ### Paper Trading
+n### Futures (USDS-M)
+
+Public market data and private trading for Binance Futures.
+
+```bash
+# Market Data
+binance futures ping
+binance futures ticker --pair btc/usdt
+binance futures ohlc --pair btc/usdt
+
+# Private Data (Requires API Key)
+binance futures balance
+binance futures positions
+binance futures order --pair btc/usdt --side BUY --volume 0.01 --type MARKET
+```
 
 ```bash
 binance paper init --pair btc/usdt --quote-balance 10000 --base-balance 1
@@ -260,7 +275,7 @@ cargo test: 25 passed
 
 ## API Coverage
 
-- REST API: Binance Spot API
+- REST API: Binance Spot & USDS-M Futures API
 - Market WebSocket: `wss://stream.binance.com:9443/ws`
 - API docs: https://developers.binance.com/
 
@@ -272,7 +287,7 @@ graph TD
     B --> C[AppContext]
     C --> D[BinanceHttpClient wrapper]
     C --> E[Output dispatcher JSON/Table]
-    D --> F[Official Spot Connector Rust crate]
+    D --> F[Spot Connector (Hyper) & Futures (Reqwest)]
     F --> G[Binance Spot REST API and WebSocket]
     B --> H[Interactive shell REPL]
     B --> I[Model Context Protocol server]
