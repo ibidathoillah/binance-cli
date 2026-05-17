@@ -2,7 +2,7 @@
 name = "binance-cli"
 version = "0.1.0"
 edition = "2021"
-description = "Unofficial command-line interface for the Binance exchange"
+description = "Unofficial Rust CLI for Binance REST, WebSocket, trading, funding, and MCP"
 license = "MIT"
 
 [[bin]]
