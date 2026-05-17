@@ -54,24 +54,52 @@ graph TD
 
 ---
 
-## 🚀 Installation & Build
+## 🚀 Quick Start & Installation
 
-Ensure you have Rust and Cargo installed. Then, clone the repository and build the workspace:
+You can install `binance-cli` using any of the following premium package formats:
 
+### 📦 Option A: Via NPM (Global Executable)
+No Rust toolchain required! The Node package manager will automatically detect your OS/architecture and fetch the pre-compiled native binary securely:
+```bash
+# Install globally
+npm install -g @ibidathoillah/binance-cli
+
+# Run immediately
+binance market server-time
+```
+
+### 🦀 Option B: Via Cargo (crates.io)
+If you already have the Rust environment ready, you can install directly from crates.io:
+```bash
+cargo install binance-cli
+```
+
+### 🐳 Option C: Via Docker (Containerized)
+Run anywhere instantly without local dependencies:
+```bash
+# Pull the latest official image
+docker pull ibidathoillah/binance-cli
+
+# Run a quick command
+docker run --rm ibidathoillah/binance-cli market server-time
+
+# Run stateful Interactive REPL Shell
+docker run -it --rm -v ~/.config/binance:/root/.config/binance ibidathoillah/binance-cli shell
+```
+
+### 🏗️ Option D: Build from Source
 ```bash
 # Clone the repository
-git clone /root/binance-cli
+git clone https://github.com/ibidathoillah/binance-cli.git
 cd binance-cli
 
 # Build in release mode
 cargo build --release
 
-# Run checks or tests
-cargo check
+# Run test suite
 cargo test
 ```
-
-The compiled binary will be available at `target/release/binance`.
+The compiled binary will be available at `./target/release/binance`.
 
 ---
 
