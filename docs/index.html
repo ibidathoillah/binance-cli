@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>binance CLI — Unofficial AI-native Terminal Interface</title>
+    <meta name="description" content="A fast, feature-rich command-line interface for the binance exchange. Trade, track markets, manage your account, and integrate with AI agents via MCP.">
+    <style>
+        :root {
+            --bg: #0d1117;
+            --bg-elevated: #161b22;
+            --border: #30363d;
+            --text: #c9d1d9;
+            --text-muted: #8b949e;
+            --accent: #58a6ff;
+            --accent-dim: #1f6feb;
+            --success: #3fb950;
+            --warning: #d29922;
+            --danger: #f85149;
+            --code-bg: #21262d;
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif; background: var(--bg); color: var(--text); line-height: 1.6; }
+        a { color: var(--accent); text-decoration: none; }
+        a:hover { text-decoration: underline; }
+        .container { max-width: 960px; margin: 0 auto; padding: 0 24px; }
+        header { border-bottom: 1px solid var(--border); background: var(--bg-elevated); padding: 64px 0 48px; text-align: center; }
+        .badge { display: inline-block; background: var(--code-bg); border: 1px solid var(--border); border-radius: 20px; padding: 4px 14px; font-size: 12px; font-weight: 600; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 20px; }
+        h1 { font-size: 48px; font-weight: 800; letter-spacing: -1px; margin-bottom: 12px; line-height: 1.2; }
+        .subtitle { font-size: 20px; color: var(--text-muted); max-width: 640px; margin: 0 auto 32px; }
+        .cta-row { display: flex; gap: 12px; justify-content: center; flex-wrap: wrap; }
+        .btn { display: inline-flex; align-items: center; gap: 8px; padding: 12px 24px; border-radius: 6px; font-weight: 600; font-size: 14px; transition: all 0.2s; border: 1px solid transparent; }
+        .btn-primary { background: var(--accent-dim); color: #fff; border-color: var(--accent-dim); }
+        .btn-secondary { background: var(--bg); color: var(--text); border-color: var(--border); }
+        .terminal { max-width: 720px; margin: 40px auto 0; background: #000; border-radius: 10px; border: 1px solid var(--border); overflow: hidden; text-align: left; box-shadow: 0 20px 50px rgba(0,0,0,0.5); }
+        .terminal-header { background: var(--code-bg); padding: 10px 16px; display: flex; gap: 8px; align-items: center; }
+        .dot { width: 12px; height: 12px; border-radius: 50%; }
+        .dot-red { background: var(--danger); }
+        .dot-yellow { background: var(--warning); }
+        .dot-green { background: var(--success); }
+        .terminal-body { padding: 20px 24px; font-family: monospace; font-size: 14px; color: #e6edf3; }
+        section { padding: 64px 0; border-bottom: 1px solid var(--border); }
+        h2 { font-size: 28px; margin-bottom: 16px; }
+        pre { background: var(--code-bg); border: 1px solid var(--border); border-radius: 8px; padding: 16px; overflow-x: auto; margin: 16px 0; }
+        footer { text-align: center; padding: 48px 0; color: var(--text-muted); border-top: 1px solid var(--border); }
+    </style>
+</head>
+<body>
+<header>
+    <div class="container">
+        <div class="badge">Unofficial AI-Native CLI</div>
+        <h1>Binance CLI</h1>
+        <p class="subtitle">Trade, track markets, and manage your account from the terminal. Built-in MCP server for AI agent integration.</p>
+        <div class="cta-row">
+            <a class="btn btn-primary" href="https://github.com/ibidathoillah/binance-cli">View on GitHub</a>
+            <a class="btn btn-secondary" href="https://www.npmjs.com/package/@ibidathoillah/binance-cli">Install via NPM</a>
+        </div>
+        <div class="terminal">
+            <div class="terminal-header"><span class="dot dot-red"></span><span class="dot dot-yellow"></span><span class="dot dot-green"></span></div>
+            <div class="terminal-body">
+                <span style="color:var(--success)">$</span> binance ticker btc/usdt<br>
+                <span style="color:#7d8590"># High-performance market data...</span><br><br>
+                <span style="color:var(--success)">$</span> binance mcp -s all<br>
+                <span style="color:var(--accent)"># MCP server active — ready for Claude, Cursor, and Gemini</span>
+            </div>
+        </div>
+    </div>
+</header>
+<section>
+    <div class="container">
+        <h2>🚀 Quick Start</h2>
+        <pre><code>npm install -g @ibidathoillah/binance-cli
+binance ticker btc/usdt</code></pre>
+        <h2>🤖 AI Agent Integration</h2>
+        <p>Built-in <strong>Model Context Protocol (MCP)</strong> support. Connect your exchange account to AI agents securely.</p>
+        <pre><code>{
+  "mcpServers": {
+    "binance": {
+      "command": "binance",
+      "args": ["mcp", "-s", "all"]
+    }
+  }
+}</code></pre>
+    </div>
+</section>
+<footer>
+    <div class="container">
+        <p>Built with Rust. Not affiliated with Binance.</p>
+    </div>
+</footer>
+</body>
+</html>
