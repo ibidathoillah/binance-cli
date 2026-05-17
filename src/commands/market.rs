@@ -151,7 +151,7 @@ impl MarketCommand {
             }
 
             Self::Ticker { symbol } => {
-                let sym = symbol.to_uppercase();
+                let sym = crate::normalize_pair(symbol);
                 let request = market::ticker_twenty_four_hr().symbol(&sym);
                 let result = client.send_request(request).await?;
                 CommandOutput::new(result, format!("24h Ticker — {}", sym))
@@ -164,28 +164,28 @@ impl MarketCommand {
             }
 
             Self::Price { symbol } => {
-                let sym = symbol.to_uppercase();
+                let sym = crate::normalize_pair(symbol);
                 let request = market::ticker_price().symbol(&sym);
                 let result = client.send_request(request).await?;
                 CommandOutput::new(result, format!("Price — {}", sym))
             }
 
             Self::BookTicker { symbol } => {
-                let sym = symbol.to_uppercase();
+                let sym = crate::normalize_pair(symbol);
                 let request = market::book_ticker().symbol(&sym);
                 let result = client.send_request(request).await?;
                 CommandOutput::new(result, format!("Book Ticker — {}", sym))
             }
 
             Self::Orderbook { symbol, limit } => {
-                let sym = symbol.to_uppercase();
+                let sym = crate::normalize_pair(symbol);
                 let request = market::depth(&sym).limit(*limit);
                 let result = client.send_request(request).await?;
                 CommandOutput::new(result, format!("Order Book — {}", sym))
             }
 
             Self::Trades { symbol, limit } => {
-                let sym = symbol.to_uppercase();
+                let sym = crate::normalize_pair(symbol);
                 let request = market::trades(&sym).limit(*limit);
                 let result = client.send_request(request).await?;
                 CommandOutput::new(result, format!("Recent Trades — {}", sym))
@@ -196,7 +196,7 @@ impl MarketCommand {
                 limit,
                 from_id,
             } => {
-                let sym = symbol.to_uppercase();
+                let sym = crate::normalize_pair(symbol);
                 let mut request = market::historical_trades(&sym).limit(*limit);
                 if let Some(id) = from_id {
                     request = request.from_id(*id);
@@ -213,7 +213,7 @@ impl MarketCommand {
             }
 
             Self::AggTrades { symbol, limit } => {
-                let sym = symbol.to_uppercase();
+                let sym = crate::normalize_pair(symbol);
                 let request = market::agg_trades(&sym).limit(*limit);
                 let result = client.send_request(request).await?;
                 CommandOutput::new(result, format!("Aggregate Trades — {}", sym))
@@ -224,7 +224,7 @@ impl MarketCommand {
                 interval,
                 limit,
             } => {
-                let sym = symbol.to_uppercase();
+                let sym = crate::normalize_pair(symbol);
                 let parsed_int = parse_interval(interval)?;
                 let request = market::klines(&sym, parsed_int).limit(*limit);
                 let result = client.send_request(request).await?;

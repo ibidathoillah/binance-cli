@@ -61,7 +61,7 @@ impl AccountCommand {
                 limit,
                 from_id,
             } => {
-                let sym = symbol.to_uppercase();
+                let sym = crate::normalize_pair(symbol);
                 let mut request = trade::my_trades(&sym)
                     .limit(*limit)
                     .credentials(&binance_creds);

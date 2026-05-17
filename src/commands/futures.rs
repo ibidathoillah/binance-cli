@@ -157,31 +157,31 @@ impl FuturesCommand {
                 Ok(CommandOutput::new(result, "Futures Exchange Info"))
             }
             Self::Ticker { pair } => {
-                let sym = normalize_pair(pair);
+                let sym = crate::normalize_pair(pair);
                 let url = format!("{}/fapi/v1/ticker/24hr?symbol={}", futures_host, sym);
                 let result = self.raw_get(&url).await?;
                 Ok(CommandOutput::new(result, format!("Futures 24h Ticker — {}", sym)))
             }
             Self::Price { pair } => {
-                let sym = normalize_pair(pair);
+                let sym = crate::normalize_pair(pair);
                 let url = format!("{}/fapi/v1/ticker/price?symbol={}", futures_host, sym);
                 let result = self.raw_get(&url).await?;
                 Ok(CommandOutput::new(result, format!("Futures Price — {}", sym)))
             }
             Self::Orderbook { pair, count } => {
-                let sym = normalize_pair(pair);
+                let sym = crate::normalize_pair(pair);
                 let url = format!("{}/fapi/v1/depth?symbol={}&limit={}", futures_host, sym, count);
                 let result = self.raw_get(&url).await?;
                 Ok(CommandOutput::new(result, format!("Futures Order Book — {}", sym)))
             }
             Self::Trades { pair, limit } => {
-                let sym = normalize_pair(pair);
+                let sym = crate::normalize_pair(pair);
                 let url = format!("{}/fapi/v1/trades?symbol={}&limit={}", futures_host, sym, limit);
                 let result = self.raw_get(&url).await?;
                 Ok(CommandOutput::new(result, format!("Futures Recent Trades — {}", sym)))
             }
             Self::Ohlc { pair, interval, count } => {
-                let sym = normalize_pair(pair);
+                let sym = crate::normalize_pair(pair);
                 let url = format!("{}/fapi/v1/klines?symbol={}&interval={}&limit={}", futures_host, sym, interval, count);
                 let result = self.raw_get(&url).await?;
                 Ok(CommandOutput::new(result, format!("Futures Klines — {}", sym)))
@@ -206,7 +206,7 @@ impl FuturesCommand {
             }
             Self::Order { pair, side, r#type, volume, price, time_in_force, stop_price, reduce_only } => {
                 let mut params = Vec::new();
-                let sym = normalize_pair(pair);
+                let sym = crate::normalize_pair(pair);
                 params.push(("symbol", sym.as_str()));
                 params.push(("side", side.as_str()));
                 params.push(("type", r#type.as_str()));
@@ -233,7 +233,7 @@ impl FuturesCommand {
             }
             Self::Cancel { pair, order_id, client_order_id } => {
                 let mut params = Vec::new();
-                let sym = normalize_pair(pair);
+                let sym = crate::normalize_pair(pair);
                 params.push(("symbol", sym.as_str()));
                 let oid_str;
                 if let Some(oid) = order_id {
@@ -248,7 +248,7 @@ impl FuturesCommand {
             }
             Self::CancelAll { pair } => {
                 let mut params = Vec::new();
-                let sym = normalize_pair(pair);
+                let sym = crate::normalize_pair(pair);
                 params.push(("symbol", sym.as_str()));
                 let result = self.private_delete(ctx, "/fapi/v1/allOpenOrders", &params).await?;
                 Ok(CommandOutput::new(result, "Futures Cancel All Result"))

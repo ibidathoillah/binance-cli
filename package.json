@@ -1,6 +1,6 @@
 {
   "name": "@ibidathoillah/binance-cli",
-  "version": "0.1.3",
+  "version": "0.1.5",
   "description": "Unofficial Rust CLI for Binance REST, WebSocket, trading, funding, and MCP",
   "bin": {
     "binance": "./bin/binance.js"

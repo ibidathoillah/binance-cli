@@ -273,7 +273,7 @@ pub async fn dispatch_non_shell(
         Command::ExchangeInfo => market::MarketCommand::ExchangeInfo.execute(ctx).await,
         Command::Ticker { pair } => {
             market::MarketCommand::Ticker {
-                symbol: normalize_pair(&pair),
+                symbol: crate::normalize_pair(&pair),
             }
                 .execute(ctx)
                 .await
@@ -281,21 +281,21 @@ pub async fn dispatch_non_shell(
         Command::TickerAll => market::MarketCommand::TickerAll.execute(ctx).await,
         Command::Price { pair } => {
             market::MarketCommand::Price {
-                symbol: normalize_pair(&pair),
+                symbol: crate::normalize_pair(&pair),
             }
                 .execute(ctx)
                 .await
         }
         Command::BookTicker { pair } => {
             market::MarketCommand::BookTicker {
-                symbol: normalize_pair(&pair),
+                symbol: crate::normalize_pair(&pair),
             }
                 .execute(ctx)
                 .await
         }
         Command::Orderbook { pair, count } => {
             market::MarketCommand::Orderbook {
-                symbol: normalize_pair(&pair),
+                symbol: crate::normalize_pair(&pair),
                 limit: count,
             }
             .execute(ctx)
@@ -303,7 +303,7 @@ pub async fn dispatch_non_shell(
         }
         Command::Trades { pair, count } => {
             market::MarketCommand::Trades {
-                symbol: normalize_pair(&pair),
+                symbol: crate::normalize_pair(&pair),
                 limit: count,
             }
             .execute(ctx)
@@ -311,7 +311,7 @@ pub async fn dispatch_non_shell(
         }
         Command::HistoricalTrades { pair, count, since } => {
             market::MarketCommand::HistoricalTrades {
-                symbol: normalize_pair(&pair),
+                symbol: crate::normalize_pair(&pair),
                 limit: count,
                 from_id: since,
             }
@@ -320,7 +320,7 @@ pub async fn dispatch_non_shell(
         }
         Command::AggTrades { pair, count } => {
             market::MarketCommand::AggTrades {
-                symbol: normalize_pair(&pair),
+                symbol: crate::normalize_pair(&pair),
                 limit: count,
             }
             .execute(ctx)
@@ -332,7 +332,7 @@ pub async fn dispatch_non_shell(
             count,
         } => {
             market::MarketCommand::Klines {
-                symbol: normalize_pair(&pair),
+                symbol: crate::normalize_pair(&pair),
                 interval,
                 limit: count,
             }
@@ -345,7 +345,7 @@ pub async fn dispatch_non_shell(
         Command::Balance => account::AccountCommand::Balance.execute(ctx).await,
         Command::TradesHistory { pair, count, since } => {
             account::AccountCommand::Trades {
-                symbol: normalize_pair(&pair),
+                symbol: crate::normalize_pair(&pair),
                 limit: count,
                 from_id: since,
             }
