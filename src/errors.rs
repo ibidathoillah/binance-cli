@@ -136,3 +136,63 @@ impl From<anyhow::Error> for BinanceError {
         BinanceError::Internal(e.to_string())
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_error_categories() {
+        assert_eq!(BinanceError::Api { code: 1, message: "err".to_string() }.category(), "api");
+        assert_eq!(BinanceError::Auth("err".to_string()).category(), "auth");
+        assert_eq!(BinanceError::Network("err".to_string()).category(), "network");
+        assert_eq!(BinanceError::Validation("err".to_string()).category(), "validation");
+        assert_eq!(BinanceError::RateLimit("err".to_string()).category(), "rate_limit");
+        assert_eq!(BinanceError::Config("err".to_string()).category(), "config");
+        assert_eq!(BinanceError::Io(std::io::Error::new(std::io::ErrorKind::Other, "io")).category(), "io");
+        assert_eq!(BinanceError::Parse("err".to_string()).category(), "parse");
+        assert_eq!(BinanceError::WebSocket("err".to_string()).category(), "websocket");
+        assert_eq!(BinanceError::Internal("err".to_string()).category(), "internal");
+    }
+
+    #[test]
+    fn test_error_retryable() {
+        assert!(BinanceError::Network("err".to_string()).retryable());
+        assert!(BinanceError::RateLimit("err".to_string()).retryable());
+        assert!(BinanceError::WebSocket("err".to_string()).retryable());
+        assert!(!BinanceError::Auth("err".to_string()).retryable());
+    }
+
+    #[test]
+    fn test_to_json_envelope() {
+        let err = BinanceError::Auth("auth failed".to_string());
+        let env = err.to_json_envelope();
+        assert_eq!(env["error"], true);
+        assert_eq!(env["error_type"], "auth");
+        assert_eq!(env["message"], "Authentication failed: auth failed");
+        assert_eq!(env["retryable"], false);
+    }
+
+    #[test]
+    fn test_to_pretty_string() {
+        let err = BinanceError::Validation("invalid symbol".to_string());
+        let pretty = err.to_pretty_string();
+        assert!(pretty.contains("Error:"));
+        assert!(pretty.contains("Validation error: invalid symbol"));
+    }
+
+    #[test]
+    fn test_conversions() {
+        let json_err = serde_json::from_str::<serde_json::Value>("{invalid}").unwrap_err();
+        let binance_err: BinanceError = json_err.into();
+        assert_eq!(binance_err.category(), "parse");
+
+        let url_err = url::Url::parse("invalid").unwrap_err();
+        let binance_err: BinanceError = url_err.into();
+        assert_eq!(binance_err.category(), "parse");
+
+        let anyhow_err = anyhow::anyhow!("some error");
+        let binance_err: BinanceError = anyhow_err.into();
+        assert_eq!(binance_err.category(), "internal");
+    }
+}

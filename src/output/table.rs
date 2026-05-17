@@ -256,3 +256,107 @@ fn format_value(val: &Value) -> String {
         _ => val.to_string(),
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use serde_json::json;
+
+    #[test]
+    fn test_table_render_empty() {
+        let output = CommandOutput::new(Value::Null, "");
+        assert_eq!(render(&output), "");
+    }
+
+    #[test]
+    fn test_table_render_explicit() {
+        let output = CommandOutput::new(Value::Null, "Explicit")
+            .with_table(
+                vec!["Col1".to_string(), "Col2".to_string()],
+                vec![vec!["A".to_string(), "B".to_string()]],
+            );
+        let rendered = render(&output);
+        assert!(rendered.contains("Explicit"));
+        assert!(rendered.contains("Col1"));
+        assert!(rendered.contains("Col2"));
+        assert!(rendered.contains("A"));
+        assert!(rendered.contains("B"));
+    }
+
+    #[test]
+    fn test_table_render_object_array() {
+        let output = CommandOutput::new(
+            json!([
+                {"asset": "BTC", "free": "1.0"},
+                {"asset": "USDT", "free": "100.0"}
+            ]),
+            "Assets",
+        );
+        let rendered = render(&output);
+        assert!(rendered.contains("asset"));
+        assert!(rendered.contains("free"));
+        assert!(rendered.contains("BTC"));
+        assert!(rendered.contains("USDT"));
+    }
+
+    #[test]
+    fn test_table_render_key_value() {
+        let output = CommandOutput::new(
+            json!({
+                "status": "ok",
+                "code": 200
+            }),
+            "Status Label",
+        );
+        let rendered = render(&output);
+        assert!(rendered.contains("status"));
+        assert!(rendered.contains("code"));
+        assert!(rendered.contains("ok"));
+        assert!(rendered.contains("200"));
+    }
+
+    #[test]
+    fn test_table_render_balances() {
+        let output = CommandOutput::new(
+            json!({
+                "balances": [
+                    {"asset": "USDT", "free": "100.0", "locked": "0.0"},
+                    {"asset": "BTC", "free": "0.5", "locked": "0.1"}
+                ]
+            }),
+            "Balances",
+        );
+        let rendered = render(&output);
+        assert!(rendered.contains("USDT"));
+        assert!(rendered.contains("BTC"));
+        assert!(rendered.contains("100.0"));
+        assert!(rendered.contains("0.5"));
+    }
+
+    #[test]
+    fn test_table_render_orderbook() {
+        let output = CommandOutput::new(
+            json!({
+                "bids": [["70000.0", "1.5"]],
+                "asks": [["70100.0", "2.0"]]
+            }),
+            "Book",
+        );
+        let rendered = render(&output);
+        assert!(rendered.contains("70000.0"));
+        assert!(rendered.contains("1.5"));
+        assert!(rendered.contains("70100.0"));
+        assert!(rendered.contains("2.0"));
+        assert!(rendered.contains("ASK"));
+        assert!(rendered.contains("BID"));
+    }
+
+    #[test]
+    fn test_format_value() {
+        assert_eq!(format_value(&Value::Null), "—");
+        assert_eq!(format_value(&Value::Bool(true)), "✓");
+        assert_eq!(format_value(&Value::Bool(false)), "✗");
+        assert_eq!(format_value(&Value::String("test".to_string())), "test");
+        assert_eq!(format_value(&json!(42)), "42");
+    }
+}

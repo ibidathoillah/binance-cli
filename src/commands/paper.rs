@@ -28,3 +28,23 @@ impl PaperCommand {
         }
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::output::OutputFormat;
+
+    #[tokio::test]
+    async fn test_paper_balance() {
+        let cmd = PaperCommand::Balance;
+        let ctx = AppContext {
+            client: crate::client::BinanceHttpClient::new("https://api.binance.com", None),
+            format: OutputFormat::Table,
+            verbose: false,
+        };
+        let res = cmd.execute(&ctx).await.unwrap();
+        assert_eq!(res.label, "Paper Balances");
+        assert!(res.addendum.unwrap().contains("simulated stub"));
+        assert_eq!(res.data["balances"][0]["asset"], "USDT");
+    }
+}

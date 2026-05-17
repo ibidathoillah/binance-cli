@@ -220,3 +220,51 @@ impl Credentials {
         )
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_config_defaults() {
+        let config = Config::default();
+        assert_eq!(config.settings.output, "table");
+        assert_eq!(config.settings.host, DEFAULT_HOST);
+        assert!(config.auth.api_key.is_none());
+    }
+
+    #[test]
+    fn test_credentials_resolve_cli() {
+        let creds = Credentials::resolve(Some("cli-key"), Some("cli-secret")).unwrap();
+        assert_eq!(creds.api_key, "cli-key");
+        assert_eq!(creds.api_secret, "cli-secret");
+    }
+
+    #[test]
+    fn test_credentials_resolve_env() {
+        std::env::set_var(ENV_API_KEY, "env-key");
+        std::env::set_var(ENV_API_SECRET, "env-secret");
+
+        let creds = Credentials::resolve(None, None).unwrap();
+        assert_eq!(creds.api_key, "env-key");
+        assert_eq!(creds.api_secret, "env-secret");
+
+        std::env::remove_var(ENV_API_KEY);
+        std::env::remove_var(ENV_API_SECRET);
+    }
+
+    #[test]
+    fn test_credentials_resolve_none() {
+        std::env::remove_var(ENV_API_KEY);
+        std::env::remove_var(ENV_API_SECRET);
+        // Ensure even if there is no config file, it fails gracefully instead of panic
+        let res = Credentials::resolve(None, None);
+        assert!(res.is_err());
+    }
+
+    #[test]
+    fn test_credentials_available() {
+        assert!(Credentials::available(Some("k"), Some("s")));
+        assert!(!Credentials::available(None, None));
+    }
+}
