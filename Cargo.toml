@@ -24,6 +24,7 @@ hmac = "0.12"
 sha2 = "0.10"
 hex = "0.4"
 hyper = { version = "0.14", features = ["full"] }
+hyper-tls = "0.5"
 url = "2"
 chrono = { version = "0.4", features = ["serde"] }
 futures-util = { version = "0.3", features = ["sink"] }

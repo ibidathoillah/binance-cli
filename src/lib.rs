@@ -2,6 +2,7 @@ pub mod client;
 pub mod commands;
 pub mod config;
 pub mod errors;
+pub mod integration;
 pub mod mcp;
 pub mod output;
 
@@ -14,13 +15,15 @@ use crate::commands::{
 use crate::errors::BinanceError;
 use crate::output::{CommandOutput, OutputFormat};
 
-pub(crate) fn normalize_pair(pair: &str) -> String {
+pub fn normalize_pair(pair: &str) -> String {
     pair.replace(['_', '-', '/'], "").to_uppercase()
 }
 
-pub(crate) fn normalize_pair_ws(pair: &str) -> String {
+pub fn normalize_pair_ws(pair: &str) -> String {
     normalize_pair(pair).to_lowercase()
 }
+
+pub use integration::prelude;
 
 #[cfg(test)]
 mod pair_tests {
